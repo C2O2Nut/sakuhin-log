@@ -329,7 +329,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.1.3</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.1.4</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -355,7 +355,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.1.3</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.1.4</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -1918,12 +1918,253 @@
 
   loadTheme();
 
+  // ===== Google Drive 連携 =====
   var CLIENT_ID = '586982625413-hto13tgg5sasgh4cdmvh8jibb7kbs2va.apps.googleusercontent.com';
-  var SCOPES = 'https://www.googleapis.com/auth/drive';
+  var SCOPES = 'https://www.googleapis.com/auth/drive.file';
   var DRIVE_FILE_NAME = 'sakuhin-log-data.json';
   var driveFileId = localStorage.getItem('drive-file-id') || null;
   var tokenClient = null;
-  var accessToken = localStorage.getItem('drive-token') || null;
+  var accessToken = null;
+  var driveReady = false; // ログイン済みフラグ
+
+  function driveSetStatus(msg, type) {
+    var s = el('drive-status');
+    s.textContent = msg;
+    s.style.display = msg ? 'block' : 'none';
+    if (!msg) { hideLoading(); return; }
+    if (msg.indexOf('中…') !== -1) {
+      showLoading();
+    } else {
+      hideLoading();
+      if (msg.indexOf('失敗') !== -1 || msg.indexOf('エラー') !== -1 || msg.indexOf('切れ') !== -1) {
+        showToast(msg, 'error');
+      } else {
+        showToast(msg, 'success');
+      }
+    }
+  }
+
+  function driveSetLoggedIn(loggedIn) {
+    driveReady = loggedIn;
+    el('drive-login-btn').style.display  = loggedIn ? 'none'  : 'block';
+    el('drive-save-btn').style.display   = loggedIn ? 'block' : 'none';
+    el('drive-load-btn').style.display   = loggedIn ? 'block' : 'none';
+    el('drive-logout-btn').style.display = loggedIn ? 'block' : 'none';
+  }
+
+  // トークンが必要な操作（トークンが切れていたら自動再取得）
+  function withToken(action) {
+    if (accessToken) { action(); return; }
+    if (!tokenClient) {
+      driveSetStatus('Google SDKが読み込まれていません。ページを再読み込みしてください', 'error');
+      return;
+    }
+    tokenClient.callback = function(resp) {
+      if (resp.error) { driveSetStatus('認証失敗: ' + resp.error); return; }
+      accessToken = resp.access_token;
+      driveSetLoggedIn(true);
+      localStorage.setItem('drive-logged-in', '1');
+      action();
+    };
+    tokenClient.requestAccessToken({ prompt: '' });
+  }
+
+  function initGoogleAuth() {
+    if (typeof google === 'undefined' || !google.accounts) {
+      setTimeout(initGoogleAuth, 600); return;
+    }
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: function(resp) {
+        if (resp.error) { driveSetStatus('ログイン失敗: ' + resp.error); return; }
+        accessToken = resp.access_token;
+        localStorage.setItem('drive-logged-in', '1');
+        driveSetLoggedIn(true);
+        driveSetStatus('ログイン済み');
+        // ログイン後：Driveを検索して同期
+        driveFindFile(function() {
+          if (driveFileId) {
+            driveLoadRaw(function(loaded) {
+              if (loaded && loaded.length > 0 && items.length === 0) {
+                items = loaded;
+                origSaveData();
+                if (currentView === 'grid') renderGrid(); else renderTimeline();
+                driveSetStatus('Driveから同期しました: ' + loaded.length + ' 件');
+              } else {
+                driveSaveRaw(function(ok) {
+                  driveSetStatus(ok ? '同期完了' : 'Drive保存失敗');
+                });
+              }
+            });
+          } else {
+            driveSaveRaw(function(ok) {
+              driveSetStatus(ok ? '初回保存完了' : 'Drive保存失敗');
+            });
+          }
+        });
+      }
+    });
+    if (localStorage.getItem('drive-logged-in') === '1') {
+      driveSetLoggedIn(true);
+      driveSetStatus('ログイン済み');
+    }
+  }
+
+  el('drive-login-btn').addEventListener('click', function() {
+    if (!tokenClient) {
+      initGoogleAuth();
+      setTimeout(function() {
+        if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+      }, 1200);
+      return;
+    }
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  });
+
+  el('drive-logout-btn').addEventListener('click', function() {
+    if (accessToken && typeof google !== 'undefined') {
+      try { google.accounts.oauth2.revoke(accessToken, function() {}); } catch(e) {}
+    }
+    accessToken = null; driveFileId = null;
+    localStorage.removeItem('drive-file-id');
+    localStorage.removeItem('drive-logged-in');
+    driveSetLoggedIn(false); driveSetStatus('');
+  });
+
+  el('drive-save-btn').addEventListener('click', function() {
+    el('data-menu').style.display = 'none';
+    driveSetStatus('保存中…');
+    withToken(function() {
+      driveFindFile(function() {
+        driveSaveRaw(function(ok) {
+          driveSetStatus(ok
+            ? '保存しました: ' + new Date().toLocaleString('ja-JP')
+            : 'Drive保存失敗。再ログインしてください');
+        });
+      });
+    });
+  });
+
+  el('drive-load-btn').addEventListener('click', function() {
+    el('data-menu').style.display = 'none';
+    driveSetStatus('読み込み中…');
+    withToken(function() {
+      // fileIdをリセットして再検索
+      driveFileId = null;
+      localStorage.removeItem('drive-file-id');
+      driveFindFile(function() {
+        if (!driveFileId) {
+          driveSetStatus('Driveにデータが見つかりません。先に保存してください');
+          return;
+        }
+        driveLoadRaw(function(loaded) {
+          if (!loaded) { driveSetStatus('読み込み失敗'); return; }
+          if (!confirm('Driveのデータ（' + loaded.length + ' 件）でローカルを上書きしますか？')) {
+            driveSetStatus(''); return;
+          }
+          items = loaded;
+          origSaveData();
+          if (currentView === 'grid') renderGrid(); else renderTimeline();
+          driveSetStatus('読み込み完了: ' + loaded.length + ' 件');
+        });
+      });
+    });
+  });
+
+  function driveFindFile(cb) {
+    // まずlocalStorageのキャッシュを使う
+    if (!driveFileId) {
+      var saved = localStorage.getItem('drive-file-id');
+      if (saved) driveFileId = saved;
+    }
+    if (driveFileId) { if (cb) cb(); return; }
+    if (!accessToken) { if (cb) cb(); return; }
+    // APIで検索
+    var q = encodeURIComponent("name='" + DRIVE_FILE_NAME + "' and trashed=false");
+    fetch('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&spaces=drive', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    }).then(function(r) {
+      if (r.status === 401) { accessToken = null; }
+      return r.ok ? r.json() : null;
+    }).then(function(data) {
+      if (data && data.files && data.files.length > 0) {
+        driveFileId = data.files[0].id;
+        localStorage.setItem('drive-file-id', driveFileId);
+      }
+      if (cb) cb();
+    }).catch(function() { if (cb) cb(); });
+  }
+
+  function driveSaveRaw(cb) {
+    if (!accessToken) { if (cb) cb(false); return; }
+    var content = JSON.stringify(items);
+    var boundary = 'sakuhinlog_boundary_2024';
+    var meta = JSON.stringify({ name: DRIVE_FILE_NAME });
+    var body = '--' + boundary + '\r\n'
+      + 'Content-Type: application/json; charset=UTF-8\r\n\r\n'
+      + meta + '\r\n'
+      + '--' + boundary + '\r\n'
+      + 'Content-Type: application/json; charset=UTF-8\r\n\r\n'
+      + content + '\r\n'
+      + '--' + boundary + '--';
+    var url = driveFileId
+      ? 'https://www.googleapis.com/upload/drive/v3/files/' + driveFileId + '?uploadType=multipart'
+      : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    fetch(url, {
+      method: driveFileId ? 'PATCH' : 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + accessToken,
+        'Content-Type': 'multipart/related; boundary=' + boundary
+      },
+      body: body
+    }).then(function(r) {
+      if (r.status === 401) { accessToken = null; if (cb) cb(false); return null; }
+      return r.json();
+    }).then(function(data) {
+      if (!data) return;
+      if (data.id) {
+        driveFileId = data.id;
+        localStorage.setItem('drive-file-id', driveFileId);
+      }
+      if (cb) cb(!!data.id || !data.error);
+    }).catch(function(e) { if (cb) cb(false); });
+  }
+
+  function driveLoadRaw(cb) {
+    if (!driveFileId || !accessToken) { if (cb) cb(null); return; }
+    fetch('https://www.googleapis.com/drive/v3/files/' + driveFileId + '?alt=media', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    }).then(function(r) {
+      if (r.status === 401) { accessToken = null; if (cb) cb(null); return null; }
+      return r.ok ? r.text() : null;
+    }).then(function(text) {
+      if (!text) { if (cb) cb(null); return; }
+      try {
+        var data = JSON.parse(text);
+        if (cb) cb(Array.isArray(data) ? data : null);
+      } catch(e) { if (cb) cb(null); }
+    }).catch(function() { if (cb) cb(null); });
+  }
+
+  // saveDataのオリジナルを保存し、自動Drive保存をフック
+  var origSaveData = saveData;
+  saveData = function() {
+    origSaveData();
+    if (accessToken && driveReady) {
+      driveFindFile(function() {
+        driveSaveRaw(function(ok) {
+          if (ok) {
+            driveSetStatus('自動保存: ' + new Date().toLocaleTimeString('ja-JP'));
+          } else if (!accessToken) {
+            driveSetStatus('トークン期限切れ。再ログインしてください');
+          }
+        });
+      });
+    }
+  };
+
+  window.addEventListener('load', function() { setTimeout(initGoogleAuth, 800); });
 
   function driveSetStatus(msg, type) {
     var s = el('drive-status');
@@ -1942,10 +2183,28 @@
   }
 
   function driveSetLoggedIn(loggedIn) {
+    driveLoggedIn = loggedIn;
     el('drive-login-btn').style.display  = loggedIn ? 'none'  : 'block';
     el('drive-save-btn').style.display   = loggedIn ? 'block' : 'none';
     el('drive-load-btn').style.display   = loggedIn ? 'block' : 'none';
     el('drive-logout-btn').style.display = loggedIn ? 'block' : 'none';
+  }
+
+  // トークンが必要な操作を実行する（期限切れなら自動で再取得）
+  function withToken(action) {
+    if (accessToken) {
+      action();
+    } else {
+      // トークンなし → 再ログイン（プロンプトなし）
+      if (!tokenClient) { driveSetStatus('ログインが必要です'); return; }
+      tokenClient.callback = function(resp) {
+        if (resp.error) { driveSetStatus('認証失敗: ' + resp.error); return; }
+        accessToken = resp.access_token;
+        driveSetLoggedIn(true);
+        action();
+      };
+      tokenClient.requestAccessToken({ prompt: '' }); // promptなし＝サイレント再認証
+    }
   }
 
   function initGoogleAuth() {
@@ -1958,45 +2217,40 @@
       callback: function(resp) {
         if (resp.error) { driveSetStatus('ログイン失敗: ' + resp.error); return; }
         accessToken = resp.access_token;
-        localStorage.setItem('drive-token', accessToken);
         driveSetLoggedIn(true);
         driveSetStatus('ログイン済み');
-        // ログイン直後は自動でDriveと同期
+        // ログイン後に自動同期
         driveFindFile(function() {
           if (driveFileId) {
-            // Driveにファイルがあれば読み込んでマージ
             driveLoadRaw(function(loaded) {
               if (loaded && loaded.length > 0 && items.length === 0) {
-                items = loaded;
-                saveData();
+                items = loaded; saveData();
                 if (currentView === 'grid') renderGrid(); else renderTimeline();
-                driveSetStatus('Driveから同期しました: ' + loaded.length + ' 件');
+                driveSetStatus('Driveから同期: ' + loaded.length + ' 件');
               } else {
-                // こちらのデータをDriveに保存
-                driveSaveRaw(function(ok) {
-                  driveSetStatus(ok ? '自動同期完了' : '同期失敗');
-                });
+                driveSaveRaw(function(ok) { driveSetStatus(ok ? '同期完了' : '同期失敗'); });
               }
             });
           } else {
-            // 初回：Driveにアップロード
-            driveSaveRaw(function(ok) {
-              driveSetStatus(ok ? 'Driveに初回保存しました' : '初回保存失敗');
-            });
+            driveSaveRaw(function(ok) { driveSetStatus(ok ? '初回保存完了' : '初回保存失敗'); });
           }
         });
       }
     });
-    // 保存済みトークンがあれば表示だけ復元（実際の操作時に再認証）
-    if (accessToken) {
+    // 前回ログイン済みかをlocalStorageで判断（トークン自体は保存しない）
+    if (localStorage.getItem('drive-logged-in') === '1') {
       driveSetLoggedIn(true);
-      driveSetStatus('ログイン済み');
+      driveSetStatus('ログイン済み（再認証が必要な場合は操作時に自動実行）');
     }
   }
 
   el('drive-login-btn').addEventListener('click', function() {
-    if (!tokenClient) { initGoogleAuth(); setTimeout(function() { if (tokenClient) tokenClient.requestAccessToken(); }, 1000); return; }
-    tokenClient.requestAccessToken();
+    if (!tokenClient) {
+      initGoogleAuth();
+      setTimeout(function() { if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' }); }, 1200);
+      return;
+    }
+    tokenClient.requestAccessToken({ prompt: 'consent' });
   });
 
   el('drive-logout-btn').addEventListener('click', function() {
@@ -2004,112 +2258,10 @@
       try { google.accounts.oauth2.revoke(accessToken, function() {}); } catch(e) {}
     }
     accessToken = null; driveFileId = null;
-    localStorage.removeItem('drive-token');
     localStorage.removeItem('drive-file-id');
+    localStorage.removeItem('drive-logged-in');
     driveSetLoggedIn(false); driveSetStatus('');
   });
-
-  el('drive-save-btn').addEventListener('click', function() {
-    el('data-menu').style.display = 'none';
-    if (!accessToken) { driveSetStatus('先にログインしてください'); return; }
-    driveSetStatus('保存中…');
-    driveFindFile(function() {
-      driveSaveRaw(function(ok) {
-        driveSetStatus(ok ? '保存しました: ' + new Date().toLocaleString('ja-JP') : '保存失敗');
-      });
-    });
-  });
-
-  el('drive-load-btn').addEventListener('click', function() {
-    el('data-menu').style.display = 'none';
-    if (!accessToken) { driveSetStatus('先にログインしてください'); return; }
-    driveSetStatus('読み込み中…');
-    driveFindFile(function() {
-      if (!driveFileId) { driveSetStatus('Driveにデータがありません。先に保存してください'); return; }
-      driveLoadRaw(function(loaded) {
-        if (!loaded) { driveSetStatus('読み込み失敗'); return; }
-        if (!confirm('Driveのデータ（' + loaded.length + ' 件）で上書きしますか？')) { driveSetStatus(''); return; }
-        items = loaded;
-        saveData();
-        if (currentView === 'grid') renderGrid(); else renderTimeline();
-        driveSetStatus('読み込み完了: ' + loaded.length + ' 件');
-      });
-    });
-  });
-
-  function driveFindFile(cb) {
-    // localStorageにfileIdがあればそれを使う
-    if (!driveFileId) {
-      var saved = localStorage.getItem('drive-file-id');
-      if (saved) driveFileId = saved;
-    }
-    if (driveFileId) { if (cb) cb(); return; }
-    if (!accessToken) { if (cb) cb(); return; }
-    // Drive全体を名前で検索
-    var q = encodeURIComponent("name='" + DRIVE_FILE_NAME + "' and trashed=false");
-    fetch('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&spaces=drive', {
-      headers: { Authorization: 'Bearer ' + accessToken }
-    }).then(function(r) { return r.json(); }).then(function(data) {
-      if (data.files && data.files.length > 0) {
-        driveFileId = data.files[0].id;
-        localStorage.setItem('drive-file-id', driveFileId);
-      }
-      if (cb) cb();
-    }).catch(function() { if (cb) cb(); });
-  }
-
-  function driveSaveRaw(cb) {
-    var content = JSON.stringify(items);
-    var boundary = '-------314159265358979323846';
-    var meta = JSON.stringify({ name: DRIVE_FILE_NAME });
-    var body = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'
-      + meta + '\r\n--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'
-      + content + '\r\n--' + boundary + '--';
-    var url = driveFileId
-      ? 'https://www.googleapis.com/upload/drive/v3/files/' + driveFileId + '?uploadType=multipart'
-      : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
-    fetch(url, {
-      method: driveFileId ? 'PATCH' : 'POST',
-      headers: {
-        Authorization: 'Bearer ' + accessToken,
-        'Content-Type': 'multipart/related; boundary="' + boundary + '"'
-      },
-      body: body
-    }).then(function(r) { return r.json(); }).then(function(data) {
-      if (data.id) {
-        driveFileId = data.id;
-        localStorage.setItem('drive-file-id', driveFileId);
-      }
-      if (cb) cb(!data.error);
-    }).catch(function() { if (cb) cb(false); });
-  }
-
-  function driveLoadRaw(cb) {
-    if (!driveFileId || !accessToken) { if (cb) cb(null); return; }
-    fetch('https://www.googleapis.com/drive/v3/files/' + driveFileId + '?alt=media', {
-      headers: { Authorization: 'Bearer ' + accessToken }
-    }).then(function(r) { return r.text(); }).then(function(text) {
-      try {
-        var data = JSON.parse(text);
-        if (cb) cb(Array.isArray(data) ? data : null);
-      } catch(e) { if (cb) cb(null); }
-    }).catch(function() { if (cb) cb(null); });
-  }
-
-  // saveDataをフックして自動保存
-  var _origSaveData = saveData;
-  saveData = function() {
-    _origSaveData();
-    if (accessToken) {
-      driveFindFile(function() {
-        driveSaveRaw(function(ok) {
-          if (ok) driveSetStatus('自動保存: ' + new Date().toLocaleTimeString('ja-JP'));
-        });
-      });
-    }
-  };
-
-  window.addEventListener('load', function() { setTimeout(initGoogleAuth, 800); });
 
   // ===== PWA: Service Worker登録 =====
   if ('serviceWorker' in navigator) {
