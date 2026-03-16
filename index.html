@@ -75,7 +75,7 @@
     animation: fadeIn 0.2s ease;
   }
   @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
-  .card:hover { box-shadow: 0 6px 20px var(--shadow); outline: 2px solid var(--accent2); }
+  .card:hover { box-shadow: 0 0 0 2px var(--accent2), 0 6px 20px var(--shadow); }
   .card-photo {
     width: 100%; height: 150px; background: var(--surface2);
     display: flex; align-items: center; justify-content: center;
@@ -172,7 +172,7 @@
     box-shadow: 0 1px 4px var(--shadow); transition: transform 0.12s, box-shadow 0.12s;
     flex-shrink: 0;
   }
-  .tl-card:hover { box-shadow: 0 4px 14px var(--shadow); outline: 2px solid var(--accent2); }
+  .tl-card:hover { box-shadow: 0 0 0 2px var(--accent2), 0 4px 14px var(--shadow); }
   .tl-card-img {
     width: 100%; height: 70px; background: var(--surface2);
     display: flex; align-items: center; justify-content: center;
@@ -331,7 +331,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.1.7</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.1.8</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -357,7 +357,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.1.7</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.1.8</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
