@@ -115,15 +115,21 @@
 
   /* コンパクト表示 */
   .grid.compact {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 10px; padding: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px; padding: 14px;
   }
-  .grid.compact .card-photo { height: 80px; }
-  .grid.compact .card-photo span { font-size: 28px !important; }
-  .grid.compact .card-genre-badge { font-size: 9px; padding: 2px 5px; }
-  .grid.compact .card-body { padding: 7px 8px; }
-  .grid.compact .card-title { font-size: 11px; margin-bottom: 3px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-  .grid.compact .card-stars { font-size: 11px; margin-bottom: 0; }
+  .grid.compact .card-photo { height: 75px; }
+  .grid.compact .card-photo > span { display: none; }
+  .grid.compact .card-photo-placeholder {
+    width: 100%; height: 100%; background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--ink3); font-weight: 500; letter-spacing: 0.03em;
+  }
+  .grid.compact .card-genre-badge { font-size: 9px; padding: 1px 5px; top: 4px; left: 4px; }
+  .grid.compact .status-dot { width: 7px; height: 7px; top: 4px; right: 4px; }
+  .grid.compact .card-body { padding: 5px 7px 7px; }
+  .grid.compact .card-title { font-size: 10px; line-height: 1.35; margin-bottom: 3px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  .grid.compact .card-stars { font-size: 10px; margin-bottom: 0; letter-spacing: 0; }
   .grid.compact .card-tags,
   .grid.compact .card-dates,
   .grid.compact .card-memo,
@@ -435,12 +441,17 @@
     </div>
     <div class="modal-body">
       <div class="form-row">
-        <label>Steam ID（数字17桁）またはカスタムURL名</label>
-        <input type="text" id="steam-id-input" placeholder="例：76561198xxxxxxxxx または yourname">
-        <div style="margin-top:6px;font-size:11px;color:var(--ink3);">
-          Steam プロフィールURL の末尾の数字かカスタム名を入力してください。<br>
-          例: steamcommunity.com/id/<b>yourname</b> または /profiles/<b>76561198...</b><br>
-          ※プロフィールを「公開」に設定している必要があります。
+        <label>Steam Web APIキー</label>
+        <input type="text" id="steam-api-key-input" placeholder="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
+        <div style="margin-top:5px;font-size:11px;color:var(--ink3);">
+          <a href="https://steamcommunity.com/dev/apikey" target="_blank" style="color:var(--accent2);">steamcommunity.com/dev/apikey</a> で無料取得できます。ドメインは何でもOK（例：localhost）
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Steam ID（数字17桁）</label>
+        <input type="text" id="steam-id-input" placeholder="例：76561199247544966">
+        <div style="margin-top:5px;font-size:11px;color:var(--ink3);">
+          プロフィールURL の /profiles/ 以降の17桁の数字
         </div>
       </div>
       <div id="steam-result" style="display:none;">
@@ -778,7 +789,10 @@
       var card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = '<div class="card-photo">'
-        + (item.photo ? '<img src="' + item.photo + '" alt="">' : '<span style="font-size:52px">' + genreIcon(item.genre) + '</span>')
+        + (item.photo
+          ? '<img src="' + item.photo + '" alt="">'
+          : '<span style="font-size:52px">' + genreIcon(item.genre) + '</span>'
+            + '<div class="card-photo-placeholder">' + item.genre + (item.type ? '<br><span style="font-size:9px;opacity:0.7">' + item.type + '</span>' : '') + '</div>')
         + '<span class="card-genre-badge badge-' + item.genre + '">' + item.genre + typeStr + '</span>'
         + '<span class="status-dot ' + status + '" title="' + status + '"></span>'
         + '</div>'
@@ -1277,91 +1291,71 @@
     el('steam-result').style.display = 'none';
     el('steam-import-confirm-btn').style.display = 'none';
     el('steam-fetch-btn').style.display = 'inline-block';
-    el('steam-id-input').value = '';
     steamGames = [];
+    // 保存済みAPIキー・IDを復元
+    var savedKey = localStorage.getItem('steam-api-key');
+    var savedId  = localStorage.getItem('steam-id');
+    if (savedKey) el('steam-api-key-input').value = savedKey;
+    if (savedId)  el('steam-id-input').value = savedId;
   });
   el('steam-modal-close').addEventListener('click', function() { el('steam-modal').classList.remove('open'); });
   el('steam-cancel-btn').addEventListener('click', function() { el('steam-modal').classList.remove('open'); });
 
   el('steam-fetch-btn').addEventListener('click', function() {
-    var rawId = el('steam-id-input').value.trim();
-    if (!rawId) { showToast('Steam IDを入力してください', 'error'); return; }
+    var apiKey = el('steam-api-key-input').value.trim();
+    var steamId = el('steam-id-input').value.trim();
+    if (!apiKey) { showToast('APIキーを入力してください', 'error'); return; }
+    if (!steamId || !/^\d{17}$/.test(steamId)) { showToast('Steam IDは17桁の数字で入力してください', 'error'); return; }
+
+    // 入力を保存
+    localStorage.setItem('steam-api-key', apiKey);
+    localStorage.setItem('steam-id', steamId);
+
     el('steam-fetch-btn').textContent = '取得中…';
     el('steam-fetch-btn').disabled = true;
     showLoading();
 
-    var isNumeric = /^\d{17}$/.test(rawId);
-    var steamId64 = isNumeric ? rawId : null;
+    // corsproxy.io 経由でSteam API呼び出し
+    var apiUrl = 'https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=' + apiKey
+      + '&steamid=' + steamId + '&include_appinfo=true&include_played_free_games=true&format=json';
 
-    function fetchGames(sid) {
-      var proxies = [
-        'https://corsproxy.io/?',
-        'https://api.codetabs.com/v1/proxy?quest='
-      ];
-      var targetUrl = 'https://steamcommunity.com/profiles/' + sid + '/games/?tab=all&xml=1';
+    var proxies = [
+      'https://corsproxy.io/?',
+      'https://api.allorigins.win/get?url='
+    ];
 
-      function tryProxy(idx) {
-        if (idx >= proxies.length) {
-          hideLoading();
-          el('steam-fetch-btn').textContent = '取得する';
-          el('steam-fetch-btn').disabled = false;
-          el('steam-result').style.display = 'block';
-          el('steam-result-msg').innerHTML = '取得失敗。Steamの設定でゲームライブラリとプロフィールを<b>公開</b>にしてから再試行してください。';
-          showToast('Steamの取得に失敗しました', 'error');
-          return;
-        }
-        fetch(proxies[idx] + encodeURIComponent(targetUrl))
-          .then(function(r) { return r.text(); })
-          .then(function(text) {
-            var parser = new DOMParser();
-            var xml = parser.parseFromString(text, 'text/xml');
-            var gameNodes = xml.querySelectorAll('game');
-            if (!gameNodes.length) { tryProxy(idx + 1); return; }
-            steamGames = [];
-            gameNodes.forEach(function(g) {
-              var appid = g.querySelector('appID') ? g.querySelector('appID').textContent : '';
-              var name  = g.querySelector('name')  ? g.querySelector('name').textContent  : '';
-              var hours = g.querySelector('hoursOnRecord') ? g.querySelector('hoursOnRecord').textContent : '0';
-              if (appid && name) steamGames.push({ appid: appid, name: name, hours: hours });
-            });
-            renderSteamList();
-            hideLoading();
-            el('steam-fetch-btn').textContent = '取得する';
-            el('steam-fetch-btn').disabled = false;
-            showToast(steamGames.length + ' 件のゲームを取得しました', 'success');
-          }).catch(function() { tryProxy(idx + 1); });
+    function tryFetch(idx) {
+      if (idx >= proxies.length) {
+        hideLoading();
+        el('steam-fetch-btn').textContent = '取得する';
+        el('steam-fetch-btn').disabled = false;
+        el('steam-result').style.display = 'block';
+        el('steam-result-msg').textContent = 'APIキーまたはSteam IDを確認してください。';
+        showToast('Steamの取得に失敗しました', 'error');
+        return;
       }
-      tryProxy(0);
+      var url = proxies[idx] + encodeURIComponent(apiUrl);
+      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        // alloriginsはdata.contents、corsproxy.ioは直接JSON
+        var json = data.contents ? JSON.parse(data.contents) : data;
+        var games = json.response && json.response.games ? json.response.games : null;
+        if (!games) { tryFetch(idx + 1); return; }
+        steamGames = games.map(function(g) {
+          return {
+            appid: String(g.appid),
+            name: g.name || 'Unknown',
+            hours: g.playtime_forever ? (g.playtime_forever / 60).toFixed(1) : '0',
+            img: g.img_header_url || ''
+          };
+        }).sort(function(a,b) { return parseFloat(b.hours) - parseFloat(a.hours); });
+        renderSteamList();
+        hideLoading();
+        el('steam-fetch-btn').textContent = '取得する';
+        el('steam-fetch-btn').disabled = false;
+        showToast(steamGames.length + ' 件のゲームを取得しました', 'success');
+      }).catch(function() { tryFetch(idx + 1); });
     }
-
-    if (steamId64) {
-      fetchGames(steamId64);
-    } else {
-      var proxies2 = [
-        'https://corsproxy.io/?',
-        'https://api.codetabs.com/v1/proxy?quest='
-      ];
-      var resolveTarget = 'https://steamcommunity.com/id/' + rawId + '/games/?tab=all&xml=1';
-      function tryResolve(idx) {
-        if (idx >= proxies2.length) {
-          el('steam-fetch-btn').textContent = '取得する';
-          el('steam-fetch-btn').disabled = false;
-          el('steam-result').style.display = 'block';
-          el('steam-result-msg').textContent = 'Steam IDが見つかりませんでした。IDを確認してください。';
-          return;
-        }
-        fetch(proxies2[idx] + encodeURIComponent(resolveTarget))
-          .then(function(r) { return r.text(); })
-          .then(function(text) {
-            var parser = new DOMParser();
-            var xml = parser.parseFromString(text, 'text/xml');
-            var sid = xml.querySelector('steamID64');
-            if (sid) { fetchGames(sid.textContent); }
-            else { tryResolve(idx + 1); }
-          }).catch(function() { tryResolve(idx + 1); });
-      }
-      tryResolve(0);
-    }
+    tryFetch(0);
   });
 
   function renderSteamList() {
