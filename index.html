@@ -67,17 +67,20 @@
 
   /* カードビュー */
   .grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(242px, 1fr));
     gap: 18px; padding: 24px;
   }
   .card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
     overflow: hidden; box-shadow: 0 2px 8px var(--shadow);
-    transition: transform 0.15s, box-shadow 0.15s; cursor: pointer;
+    cursor: pointer;
     animation: fadeIn 0.2s ease;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
   }
   @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
-  .card:hover { box-shadow: 0 0 0 2px var(--accent2), 0 6px 20px var(--shadow); }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 0 0 2px var(--accent2), 0 6px 20px var(--shadow); }
   /* カード内の子要素はクリックを通過させる（判定ずれ防止） */
   .card * { pointer-events: none; }
   .card-photo {
@@ -336,7 +339,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.1.9</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.2.1</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -362,7 +365,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.1.9</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.2.1</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -810,7 +813,10 @@
 
     if (editingId !== null) {
       var item = null;
-      for (var i = 0; i < items.length; i++) { if (items[i].id === editingId) { item = items[i]; break; } }
+      // 型が混在する可能性があるので文字列比較で一致を確認
+      for (var i = 0; i < items.length; i++) {
+        if (String(items[i].id) === String(editingId)) { item = items[i]; editingId = items[i].id; break; }
+      }
       if (!item) { editingId = null; return; }
 
       el('modal-title').textContent = '作品を編集';
@@ -878,7 +884,7 @@
 
     if (editingId !== null) {
       for (var i = 0; i < items.length; i++) {
-        if (items[i].id === editingId) { items[i] = item; break; }
+        if (String(items[i].id) === String(editingId)) { items[i] = item; break; }
       }
     } else {
       items.unshift(item);
@@ -889,7 +895,7 @@
 
   function deleteItem() {
     if (!confirm('この作品を削除しますか？')) return;
-    items = items.filter(function(x) { return x.id !== editingId; });
+    items = items.filter(function(x) { return String(x.id) !== String(editingId); });
     saveData(); closeModal();
     if (currentView === 'grid') renderGrid(); else renderTimeline();
   }
@@ -990,10 +996,19 @@
         + (item.memo ? '<div class="card-memo">' + item.memo + '</div>' : '')
         + (item.memoPhoto ? '<img src="' + item.memoPhoto + '" style="width:100%;margin-top:7px;border-radius:3px;border:1px solid var(--border);" alt="">' : '')
         + '</div>';
-      card.addEventListener('click', (function(id) {
-        return function() { openModal(id); };
-      })(item.id));
+      card.setAttribute('data-id', String(item.id));
       grid.appendChild(card);
+    });
+
+    // イベント委譲：グリッド全体で1つのclickリスナー
+    grid.addEventListener('click', function(e) {
+      var card = e.target.closest('.card');
+      if (!card) return;
+      var id = card.getAttribute('data-id');
+      if (!id) return;
+      // 数値か文字列かを判定して正しい型で渡す
+      var numId = parseFloat(id);
+      openModal(isNaN(numId) ? id : numId);
     });
   }
 
@@ -1090,6 +1105,7 @@
             + '</div>'
             + '<div class="tl-card-name">' + item.name + '</div>'
             + '<div class="tl-card-stars">' + stars + '</div>';
+          card.setAttribute('data-id', String(item.id));
           card.addEventListener('click', (function(id) {
             return function() { openModal(id); };
           })(item.id));
@@ -1595,7 +1611,7 @@
               var memo = (notesByBid[key] || []).join('\n\n');
 
               newItems.push({
-                id: Date.now() + Math.random(),
+                id: Date.now() + Math.floor(Math.random() * 1000),
                 name: b.title || '',
                 genre: '小説',
                 type: b.book_type === 'comic' ? 'マンガ' : '',
@@ -1808,7 +1824,7 @@
         dates = [{ start: '', end: new Date(g.lastPlayed * 1000).toISOString().slice(0, 10) }];
       }
       var newItem = {
-        id: Date.now() + Math.random(),
+        id: Date.now() + Math.floor(Math.random() * 1000),
         name: g.name,
         genre: 'ゲーム',
         type: '',
