@@ -113,6 +113,30 @@
   .empty { grid-column:1/-1; text-align:center; padding:80px 20px; color:var(--ink3); }
   .empty p { font-size:14px; margin-top:12px; }
 
+  /* コンパクト表示 */
+  .grid.compact {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px; padding: 16px;
+  }
+  .grid.compact .card-photo { height: 80px; }
+  .grid.compact .card-photo span { font-size: 28px !important; }
+  .grid.compact .card-genre-badge { font-size: 9px; padding: 2px 5px; }
+  .grid.compact .card-body { padding: 7px 8px; }
+  .grid.compact .card-title { font-size: 11px; margin-bottom: 3px; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  .grid.compact .card-stars { font-size: 11px; margin-bottom: 0; }
+  .grid.compact .card-tags,
+  .grid.compact .card-dates,
+  .grid.compact .card-memo,
+  .grid.compact .card-memo-img { display: none; }
+
+  /* レイアウト切り替えボタン */
+  .layout-btn {
+    padding: 6px 10px; background: transparent; border: 1.5px solid var(--border);
+    border-radius: 4px; color: var(--ink2); cursor: pointer; font-size: 14px;
+    transition: all 0.15s; line-height: 1;
+  }
+  .layout-btn.active { background: var(--ink2); color: #fff; border-color: var(--ink2); }
+
   /* 年表ビュー */
   #timeline-view { display: none; padding: 24px 24px 24px 0; }
   .tl-year-label {
@@ -331,6 +355,8 @@
     </div>
   </div>
   <div class="toolbar-right">
+    <button class="layout-btn active" id="layout-normal-btn" title="通常表示">▦</button>
+    <button class="layout-btn" id="layout-compact-btn" title="コンパクト表示">⊞</button>
     <button class="view-btn active" id="view-grid-btn">カード</button>
     <button class="view-btn" id="view-tl-btn">年表</button>
     <button class="add-btn" id="add-btn">＋ 追加</button>
@@ -525,8 +551,9 @@
   try { items = JSON.parse(localStorage.getItem('sakuhin-log') || '[]'); } catch(e) { items = []; }
 
   var currentFilter = 'all';
-  var currentTagFilter = null; // null = 絞り込みなし
+  var currentTagFilter = null;
   var currentView = 'grid';
+  var currentLayout = localStorage.getItem('sakuhin-layout') || 'normal'; // 'normal' or 'compact'
   var editingId = null;
   var currentStar = 0;
   var photoData = null;
@@ -729,6 +756,9 @@
     el('count-bar').textContent = filtered.length + ' 件' + (filterLabel ? '（' + filterLabel + '）' : '（全件）');
 
     var grid = el('grid-view');
+    // レイアウト切り替え
+    grid.className = currentLayout === 'compact' ? 'grid compact' : 'grid';
+
     if (filtered.length === 0) {
       var emptyMsg = currentTagFilter ? '#' + currentTagFilter + ' の作品がありません' : currentFilter === 'all' ? 'まだ作品がありません。「＋ 追加」から登録しよう！' : currentFilter + 'の作品がありません';
       grid.innerHTML = '<div class="empty"><p>' + emptyMsg + '</p></div>';
@@ -987,6 +1017,26 @@
   });
 
   // ビュー切り替え
+  // レイアウト切り替え（通常 / コンパクト）
+  function applyLayoutBtns() {
+    el('layout-normal-btn').classList.toggle('active', currentLayout === 'normal');
+    el('layout-compact-btn').classList.toggle('active', currentLayout === 'compact');
+  }
+  applyLayoutBtns();
+
+  el('layout-normal-btn').addEventListener('click', function() {
+    currentLayout = 'normal';
+    localStorage.setItem('sakuhin-layout', 'normal');
+    applyLayoutBtns();
+    if (currentView === 'grid') renderGrid();
+  });
+  el('layout-compact-btn').addEventListener('click', function() {
+    currentLayout = 'compact';
+    localStorage.setItem('sakuhin-layout', 'compact');
+    applyLayoutBtns();
+    if (currentView === 'grid') renderGrid();
+  });
+
   el('view-grid-btn').addEventListener('click', function() {
     currentView = 'grid';
     el('view-grid-btn').classList.add('active'); el('view-tl-btn').classList.remove('active');
