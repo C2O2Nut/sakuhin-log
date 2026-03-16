@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="作品ログ">
+<meta name="theme-color" content="#1a1612">
+<title>作品ログ</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --bg: #f5f0e8; --surface: #fdfaf4; --surface2: #ede8dc;
+    --ink: #1a1612; --ink2: #5a5248; --ink3: #9a9088;
+    --accent: #c94a2a; --accent2: #2a6e8c;
+    --border: #d0c8b8; --shadow: rgba(26,22,18,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+  header {
+    background: var(--ink); padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100; border-bottom: 3px solid var(--accent);
+  }
+  header h1 { font-family: 'Noto Serif JP', serif; color: var(--bg); font-size: 20px; letter-spacing: 0.1em; }
+  header span { font-family: 'DM Mono', monospace; color: var(--ink3); font-size: 12px; }
+
+  .toolbar {
+    padding: 12px 24px; display: flex; gap: 10px; align-items: center;
+    background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 5px 14px; border: 1.5px solid var(--border); background: transparent;
+    border-radius: 20px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px;
+    color: var(--ink2); cursor: pointer; transition: all 0.15s;
+  }
+  .filter-btn:hover { background: var(--surface2); }
+  .filter-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .filter-btn.active[data-genre="ゲーム"] { background: #2a6e8c; border-color: #2a6e8c; color: #fff; }
+  .filter-btn.active[data-genre="映画"]   { background: #c94a2a; border-color: #c94a2a; color: #fff; }
+  .filter-btn.active[data-genre="小説"]   { background: #5a7a3a; border-color: #5a7a3a; color: #fff; }
+  .toolbar-right { margin-left: auto; display: flex; gap: 8px; }
+  .add-btn {
+    padding: 7px 18px; background: var(--accent); color: #fff; border: none;
+    border-radius: 4px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px;
+    font-weight: 500; cursor: pointer; transition: opacity 0.15s;
+  }
+  .add-btn:hover { opacity: 0.85; }
+  .view-btn {
+    padding: 7px 14px; background: transparent; border: 1.5px solid var(--border);
+    border-radius: 4px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px;
+    color: var(--ink2); cursor: pointer; transition: all 0.15s;
+  }
+  .view-btn.active { background: var(--ink2); color: #fff; border-color: var(--ink2); }
+
+  .count-bar {
+    padding: 7px 24px; font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--ink3); background: var(--surface2); border-bottom: 1px solid var(--border);
+  }
+
+  /* カードビュー */
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 18px; padding: 24px;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    overflow: hidden; box-shadow: 0 2px 8px var(--shadow);
+    transition: transform 0.15s, box-shadow 0.15s; cursor: pointer;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px var(--shadow); }
+  .card-photo {
+    width: 100%; height: 150px; background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .card-photo img { width:100%; height:100%; object-fit:cover; }
+  .card-genre-badge {
+    position: absolute; top: 8px; left: 8px; padding: 3px 9px; border-radius: 3px;
+    font-size: 11px; font-weight: 500; color: #fff;
+  }
+  .badge-ゲーム { background: #2a6e8c; }
+  .badge-映画   { background: #c94a2a; }
+  .badge-小説   { background: #5a7a3a; }
+  .badge-マンガ { background: #8c5a2a; }
+  .badge-アニメ { background: #6a2a8c; }
+  .badge-その他 { background: #555; }
+  .status-dot {
+    position: absolute; top: 8px; right: 8px; width: 9px; height: 9px; border-radius: 50%;
+  }
+  .status-dot.完了   { background: #5a9a4a; }
+  .status-dot.進行中 { background: #e8a020; }
+  .status-dot.未着手 { background: #aaa; }
+  .card-body { padding: 12px 14px; }
+  .card-title { font-family: 'Noto Serif JP', serif; font-size: 15px; font-weight: 700; line-height: 1.4; margin-bottom: 5px; }
+  .card-stars { font-size: 14px; margin-bottom: 6px; letter-spacing: 1px; }
+  .star-filled { color: #d4920a; } .star-empty { color: var(--border); }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  .tag { padding: 2px 7px; background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; font-size: 11px; color: var(--ink2); }
+  .card-dates { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--ink3); margin-bottom: 2px; }
+  .card-memo {
+    font-size: 12px; color: var(--ink2); line-height: 1.6;
+    border-top: 1px dashed var(--border); padding-top: 7px; margin-top: 6px;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  }
+  .empty { grid-column:1/-1; text-align:center; padding:80px 20px; color:var(--ink3); }
+  .empty p { font-size:14px; margin-top:12px; }
+
+  /* 年表ビュー */
+  #timeline-view { display: none; padding: 24px 24px 24px 0; }
+  .tl-year-label {
+    font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500;
+    color: var(--ink3); letter-spacing: 0.1em; padding: 12px 0 8px 24px;
+  }
+  .tl-month-row { display: flex; align-items: flex-start; min-height: 100px; }
+  .tl-month-label {
+    width: 80px; flex-shrink: 0; text-align: right; padding-right: 14px;
+    padding-top: 10px; position: relative;
+    font-family: 'DM Mono', monospace; font-size: 15px; color: var(--ink2); font-weight: 500;
+  }
+  .tl-month-label::after {
+    content: ''; position: absolute; right: -5px; top: 14px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--bg); z-index: 2;
+  }
+  .tl-vert-line { width: 2px; background: var(--border); flex-shrink: 0; align-self: stretch; }
+  .tl-cards { flex: 1; display: flex; flex-wrap: wrap; gap: 10px; padding: 6px 0 20px 18px; }
+  .tl-card {
+    width: 100px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 5px; overflow: hidden; cursor: pointer;
+    box-shadow: 0 1px 4px var(--shadow); transition: transform 0.12s, box-shadow 0.12s;
+    flex-shrink: 0;
+  }
+  .tl-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px var(--shadow); }
+  .tl-card-img {
+    width: 100%; height: 70px; background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; overflow: hidden; position: relative;
+  }
+  .tl-card-img img { width:100%; height:100%; object-fit:cover; }
+  .tl-card-badge {
+    position: absolute; bottom: 0; left: 0; right: 0; padding: 2px 5px;
+    font-size: 9px; color: rgba(255,255,255,0.92); background: rgba(0,0,0,0.45);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tl-card-name {
+    padding: 5px 6px; font-size: 10px; line-height: 1.3; font-weight: 500;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .tl-card-stars { padding: 0 6px 5px; font-size: 10px; color: #d4920a; }
+  .dl-btn {
+    padding: 7px 16px; background: var(--ink2); color: #fff; border: none;
+    border-radius: 4px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px;
+    cursor: pointer; transition: opacity 0.15s; margin: 0 24px 16px auto; display: block;
+  }
+  .dl-btn:hover { opacity: 0.85; }
+
+  /* モーダル */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 200;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalIn 0.18s ease;
+  }
+  @keyframes modalIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:none; } }
+  .modal-header {
+    padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-header h2 { font-family: 'Noto Serif JP', serif; font-size: 16px; }
+  .modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink2); }
+  .modal-body { padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; }
+  .form-row { display: flex; flex-direction: column; gap: 4px; }
+  .form-row label { font-size: 11px; font-weight: 500; color: var(--ink2); letter-spacing: 0.05em; }
+  .form-row input, .form-row select, .form-row textarea {
+    padding: 8px 11px; border: 1.5px solid var(--border); border-radius: 4px;
+    font-family: 'Noto Sans JP', sans-serif; font-size: 14px;
+    background: var(--bg); color: var(--ink); transition: border-color 0.15s; outline: none;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--accent2); }
+  .form-row textarea { resize: vertical; min-height: 72px; }
+  .form-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .star-input { display: flex; gap: 6px; }
+  .star-input button {
+    background: none; border: none; font-size: 26px; cursor: pointer; padding: 0;
+    transition: transform 0.1s; color: #aaa; line-height: 1;
+  }
+  .star-input button:hover { transform: scale(1.2); }
+  .photo-upload {
+    border: 2px dashed var(--border); border-radius: 4px; padding: 16px;
+    text-align: center; cursor: pointer; font-size: 13px; color: var(--ink3);
+    transition: border-color 0.15s; position: relative; overflow: hidden;
+  }
+  .photo-upload:hover { border-color: var(--accent2); }
+  .photo-upload input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    width: 100%; height: 100%; padding: 0; border: none; background: transparent;
+  }
+  .photo-preview { width:100%; max-height:150px; object-fit:cover; border-radius:3px; display:none; }
+  .date-row { display: flex; align-items: center; gap: 7px; }
+  .date-row input[type=date] {
+    flex: 1; padding: 7px 9px; border: 1.5px solid var(--border); border-radius: 4px;
+    font-size: 13px; background: var(--bg); color: var(--ink); outline: none;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .date-row input[type=date]:focus { border-color: var(--accent2); }
+  .date-sep { color: var(--ink3); font-size: 13px; flex-shrink: 0; }
+  .date-remove { background: none; border: none; color: var(--ink3); cursor: pointer; font-size: 17px; padding: 0 3px; }
+  #date-list { display: flex; flex-direction: column; gap: 6px; }
+  .add-date-btn {
+    margin-top: 6px; background: none; border: 1.5px dashed var(--border); border-radius: 4px;
+    padding: 5px 12px; font-size: 12px; color: var(--ink2); cursor: pointer; width: 100%;
+    font-family: 'Noto Sans JP', sans-serif; transition: border-color 0.15s;
+  }
+  .add-date-btn:hover { border-color: var(--accent2); }
+  .memo-clear { display: none; margin-top: 5px; font-size: 12px; background: none; border: none; color: #c94a2a; cursor: pointer; }
+  .modal-footer {
+    padding: 14px 22px; border-top: 1px solid var(--border);
+    display: flex; justify-content: flex-end; gap: 10px;
+  }
+  .btn-cancel {
+    padding: 8px 18px; background: transparent; border: 1.5px solid var(--border);
+    border-radius: 4px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; cursor: pointer; color: var(--ink2);
+  }
+  .btn-save {
+    padding: 8px 22px; background: var(--ink); color: var(--bg); border: none;
+    border-radius: 4px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer;
+  }
+  .btn-delete {
+    padding: 8px 14px; background: transparent; border: 1.5px solid #c94a2a; border-radius: 4px;
+    font-family: 'Noto Sans JP', sans-serif; font-size: 13px; cursor: pointer; color: #c94a2a; margin-right: auto;
+  }
+  /* データメニュー */
+  .dmenu-btn {
+    display: block; width: 100%; padding: 10px 14px; background: none; border: none;
+    text-align: left; font-family: 'Noto Sans JP', sans-serif; font-size: 13px;
+    color: var(--ink); cursor: pointer; transition: background 0.1s;
+  }
+  .dmenu-btn:hover { background: var(--surface2); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>作品ログ</h1>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="header-count">0 件</span>
+    <button id="data-menu-btn" style="background:none;border:1.5px solid rgba(255,255,255,0.2);color:#ccc;border-radius:4px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'">データ</button>
+  </div>
+</header>
+
+<!-- データメニュー -->
+<div id="data-menu" style="display:none;position:fixed;top:52px;right:16px;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px var(--shadow);z-index:300;min-width:230px;overflow:hidden;">
+  <div style="padding:10px 14px 6px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-bottom:1px solid var(--border);">Google Drive 自動同期</div>
+  <button class="dmenu-btn" id="drive-login-btn">Googleアカウントでログイン</button>
+  <button class="dmenu-btn" id="drive-save-btn" style="display:none">Driveに今すぐ保存</button>
+  <button class="dmenu-btn" id="drive-load-btn" style="display:none">Driveから読み込む</button>
+  <button class="dmenu-btn" id="drive-logout-btn" style="display:none;color:#c94a2a;">ログアウト</button>
+  <div id="drive-status" style="padding:6px 14px 8px;font-size:11px;color:var(--ink3);display:none;"></div>
+  <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">手動バックアップ</div>
+  <button class="dmenu-btn" id="export-btn">JSONでエクスポート</button>
+  <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
+  <input type="file" id="import-file" accept=".json" style="display:none;">
+</div>
+
+<div class="toolbar">
+  <button class="filter-btn active" data-genre="all">すべて</button>
+  <button class="filter-btn" data-genre="ゲーム">ゲーム</button>
+  <button class="filter-btn" data-genre="映画">映画</button>
+  <button class="filter-btn" data-genre="小説">小説</button>
+  <button class="filter-btn" data-genre="マンガ">マンガ</button>
+  <button class="filter-btn" data-genre="アニメ">アニメ</button>
+  <div class="toolbar-right">
+    <button class="view-btn active" id="view-grid-btn">カード</button>
+    <button class="view-btn" id="view-tl-btn">年表</button>
+    <button class="add-btn" id="add-btn">＋ 追加</button>
+  </div>
+</div>
+
+<div class="count-bar" id="count-bar">0 件</div>
+
+<div class="grid" id="grid-view">
+  <div class="empty">
+    
+    <p>まだ作品がありません。「＋ 追加」から登録しよう！</p>
+  </div>
+</div>
+
+<div id="timeline-view">
+  <button class="dl-btn" id="dl-btn">年表をHTMLでダウンロード</button>
+  <div id="timeline-content"></div>
+</div>
+
+<!-- モーダル -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">新しい作品を追加</h2>
+      <button class="modal-close" id="modal-close-btn">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>作品名 *</label>
+        <input type="text" id="f-name" placeholder="例：FF7 リバース">
+      </div>
+      <div class="form-two">
+        <div class="form-row">
+          <label>ジャンル</label>
+          <select id="f-genre">
+            <option value="ゲーム">ゲーム</option>
+            <option value="映画">映画</option>
+            <option value="小説">小説</option>
+            <option value="マンガ">マンガ</option>
+            <option value="アニメ">アニメ</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>種類・カテゴリ</label>
+          <input type="text" id="f-type" placeholder="例：RPG、ホラー">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>おもしろさ（3段階）</label>
+        <div class="star-input" id="star-input">
+          <button type="button" data-val="1">☆</button>
+          <button type="button" data-val="2">☆</button>
+          <button type="button" data-val="3">☆</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>タグ（スペース区切り）</label>
+        <input type="text" id="f-tags" placeholder="例：名作 泣ける SF">
+      </div>
+      <div class="form-row">
+        <label>写真</label>
+        <div class="photo-upload">
+          <img id="photo-preview" class="photo-preview" alt="">
+          <div id="photo-placeholder">クリックして画像を選択</div>
+          <input type="file" id="f-photo" accept="image/*">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>プレイ・視聴期間</label>
+        <div id="date-list"></div>
+        <button type="button" class="add-date-btn" id="add-date-btn">＋ 期間を追加</button>
+      </div>
+      <div class="form-two">
+        <div class="form-row">
+          <label>状態</label>
+          <select id="f-status">
+            <option value="完了">完了</option>
+            <option value="進行中">進行中</option>
+            <option value="未着手">未着手</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>メモ</label>
+        <textarea id="f-memo" placeholder="感想、印象に残ったこと…"></textarea>
+      </div>
+      <div class="form-row">
+        <label>メモ写真</label>
+        <div class="photo-upload">
+          <img id="memo-preview" class="photo-preview" alt="">
+          <div id="memo-placeholder">クリックして画像を追加</div>
+          <input type="file" id="f-memo-photo" accept="image/*">
+        </div>
+        <button type="button" class="memo-clear" id="memo-clear-btn">メモ画像を削除</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-delete" id="btn-delete" style="display:none">削除</button>
+      <button type="button" class="btn-cancel" id="btn-cancel">キャンセル</button>
+      <button type="button" class="btn-save" id="btn-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ===== データ =====
+  var items = [];
+  try { items = JSON.parse(localStorage.getItem('sakuhin-log') || '[]'); } catch(e) { items = []; }
+
+  var currentFilter = 'all';
+  var currentView = 'grid';
+  var editingId = null;
+  var currentStar = 0;
+  var photoData = null;
+  var memoPhotoData = null;
+
+  function saveData() {
+    try { localStorage.setItem('sakuhin-log', JSON.stringify(items)); } catch(e) {}
+  }
+
+  // ===== ユーティリティ =====
+  function el(id) { return document.getElementById(id); }
+
+  function starsHTML(n) {
+    var h = '';
+    for (var i = 1; i <= 3; i++) h += '<span class="' + (i <= n ? 'star-filled' : 'star-empty') + '">' + (i <= n ? '★' : '☆') + '</span>';
+    return h;
+  }
+
+  function genreIcon(g) {
+    return '';
+  }
+
+  function getFirstDate(item) {
+    var dates = item.dates || (item.dateStart || item.dateEnd ? [{ start: item.dateStart||'', end: item.dateEnd||'' }] : []);
+    for (var i = 0; i < dates.length; i++) {
+      if (dates[i].start) return dates[i].start;
+      if (dates[i].end) return dates[i].end;
+    }
+    return null;
+  }
+
+  function getItemDates(item) {
+    return item.dates || (item.dateStart || item.dateEnd ? [{ start: item.dateStart||'', end: item.dateEnd||'' }] : []);
+  }
+
+  // ===== 星評価 =====
+  function setStar(val) {
+    currentStar = val;
+    var btns = document.querySelectorAll('#star-input button');
+    btns.forEach(function(b, i) {
+      b.textContent = i < val ? '★' : '☆';
+      b.style.color = i < val ? '#d4920a' : '#aaa';
+    });
+  }
+
+  // ===== 日付行 =====
+  function addDateRow(start, end) {
+    var list = el('date-list');
+    var row = document.createElement('div');
+    row.className = 'date-row';
+
+    var s = document.createElement('input');
+    s.type = 'date'; s.className = 'date-start'; s.value = start || '';
+
+    var sep = document.createElement('span');
+    sep.className = 'date-sep'; sep.textContent = '〜';
+
+    var e = document.createElement('input');
+    e.type = 'date'; e.className = 'date-end'; e.value = end || '';
+
+    var rm = document.createElement('button');
+    rm.type = 'button'; rm.className = 'date-remove'; rm.textContent = '×';
+    rm.addEventListener('click', function() { row.remove(); });
+
+    row.appendChild(s); row.appendChild(sep); row.appendChild(e); row.appendChild(rm);
+    list.appendChild(row);
+  }
+
+  function getDates() {
+    var result = [];
+    document.querySelectorAll('#date-list .date-row').forEach(function(r) {
+      var s = r.querySelector('.date-start').value;
+      var e = r.querySelector('.date-end').value;
+      if (s || e) result.push({ start: s, end: e });
+    });
+    return result;
+  }
+
+  function renderDateList(dates) {
+    el('date-list').innerHTML = '';
+    if (!dates || dates.length === 0) { addDateRow('', ''); }
+    else { dates.forEach(function(d) { addDateRow(d.start, d.end); }); }
+  }
+
+  // ===== モーダル =====
+  function openModal(id) {
+    editingId = (id !== undefined && id !== null) ? id : null;
+    currentStar = 0; photoData = null; memoPhotoData = null;
+    setStar(0);
+
+    el('photo-preview').style.display = 'none'; el('photo-preview').src = '';
+    el('photo-placeholder').style.display = 'block'; el('f-photo').value = '';
+    el('memo-preview').style.display = 'none'; el('memo-preview').src = '';
+    el('memo-placeholder').style.display = 'block';
+    el('memo-clear-btn').style.display = 'none'; el('f-memo-photo').value = '';
+
+    if (editingId !== null) {
+      var item = null;
+      for (var i = 0; i < items.length; i++) { if (items[i].id === editingId) { item = items[i]; break; } }
+      if (!item) { editingId = null; return; }
+
+      el('modal-title').textContent = '作品を編集';
+      el('f-name').value = item.name || '';
+      el('f-genre').value = item.genre || 'ゲーム';
+      el('f-type').value = item.type || '';
+      el('f-tags').value = (item.tags || []).join(' ');
+      renderDateList(getItemDates(item));
+      el('f-status').value = item.status || '完了';
+      el('f-memo').value = item.memo || '';
+      el('btn-delete').style.display = 'inline-block';
+      setStar(item.stars || 0);
+      if (item.photo) {
+        photoData = item.photo;
+        el('photo-preview').src = item.photo; el('photo-preview').style.display = 'block';
+        el('photo-placeholder').style.display = 'none';
+      }
+      if (item.memoPhoto) {
+        memoPhotoData = item.memoPhoto;
+        el('memo-preview').src = item.memoPhoto; el('memo-preview').style.display = 'block';
+        el('memo-placeholder').style.display = 'none';
+        el('memo-clear-btn').style.display = 'block';
+      }
+    } else {
+      el('modal-title').textContent = '新しい作品を追加';
+      el('f-name').value = ''; el('f-genre').value = 'ゲーム'; el('f-type').value = '';
+      el('f-tags').value = ''; renderDateList([]); el('f-status').value = '完了';
+      el('f-memo').value = ''; el('btn-delete').style.display = 'none';
+    }
+    el('modal').classList.add('open');
+    el('f-name').focus();
+  }
+
+  function closeModal() {
+    el('modal').classList.remove('open');
+    editingId = null;
+  }
+
+  function saveItem() {
+    var name = el('f-name').value.trim();
+    if (!name) { alert('作品名を入力してください'); return; }
+
+    var item = {
+      id: editingId !== null ? editingId : Date.now(),
+      name: name,
+      genre: el('f-genre').value,
+      type: el('f-type').value.trim(),
+      stars: currentStar,
+      tags: el('f-tags').value.trim().split(/\s+/).filter(Boolean),
+      dates: getDates(),
+      status: el('f-status').value,
+      memo: el('f-memo').value.trim(),
+      photo: photoData,
+      memoPhoto: memoPhotoData,
+      updatedAt: Date.now()
+    };
+
+    if (editingId !== null) {
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].id === editingId) { items[i] = item; break; }
+      }
+    } else {
+      items.unshift(item);
+    }
+    saveData(); closeModal();
+    if (currentView === 'grid') renderGrid(); else renderTimeline();
+  }
+
+  function deleteItem() {
+    if (!confirm('この作品を削除しますか？')) return;
+    items = items.filter(function(x) { return x.id !== editingId; });
+    saveData(); closeModal();
+    if (currentView === 'grid') renderGrid(); else renderTimeline();
+  }
+
+  // ===== カードビュー =====
+  function renderGrid() {
+    var filtered = currentFilter === 'all' ? items : items.filter(function(x) { return x.genre === currentFilter; });
+    el('header-count').textContent = items.length + ' 件';
+    el('count-bar').textContent = currentFilter === 'all' ? '全 ' + items.length + ' 件' : filtered.length + ' 件（' + currentFilter + '）';
+
+    var grid = el('grid-view');
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div class="empty"><p>' + (currentFilter === 'all' ? 'まだ作品がありません。「＋ 追加」から登録しよう！' : currentFilter + 'の作品がありません') + '</p></div>';
+      return;
+    }
+
+    grid.innerHTML = '';
+    filtered.forEach(function(item) {
+      var dates = getItemDates(item);
+      var datesHTML = dates.map(function(d, i) {
+        return '<div class="card-dates">' + (i > 0 ? '再: ' : '') + (d.start||'?') + ' 〜 ' + (d.end||'?') + '</div>';
+      }).join('');
+      var tagsHTML = (item.tags||[]).map(function(t) { return '<span class="tag">' + t + '</span>'; }).join('');
+      var typeStr = item.type ? ' / ' + item.type : '';
+      var status = item.status || '完了';
+
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = '<div class="card-photo">'
+        + (item.photo ? '<img src="' + item.photo + '" alt="">' : '<span style="font-size:52px">' + genreIcon(item.genre) + '</span>')
+        + '<span class="card-genre-badge badge-' + item.genre + '">' + item.genre + typeStr + '</span>'
+        + '<span class="status-dot ' + status + '" title="' + status + '"></span>'
+        + '</div>'
+        + '<div class="card-body">'
+        + '<div class="card-title">' + item.name + '</div>'
+        + '<div class="card-stars">' + starsHTML(item.stars) + '</div>'
+        + (tagsHTML ? '<div class="card-tags">' + tagsHTML + '</div>' : '')
+        + datesHTML
+        + (item.memo ? '<div class="card-memo">' + item.memo + '</div>' : '')
+        + (item.memoPhoto ? '<img src="' + item.memoPhoto + '" style="width:100%;margin-top:7px;border-radius:3px;border:1px solid var(--border);" alt="">' : '')
+        + '</div>';
+      card.addEventListener('click', (function(id) {
+        return function() { openModal(id); };
+      })(item.id));
+      grid.appendChild(card);
+    });
+  }
+
+  // ===== 年表ビュー =====
+  function renderTimeline() {
+    el('header-count').textContent = items.length + ' 件';
+
+    var dated = items.filter(function(x) { return getFirstDate(x); });
+    dated.sort(function(a, b) { return getFirstDate(a) < getFirstDate(b) ? -1 : 1; });
+
+    var grouped = {};
+    dated.forEach(function(item) {
+      var d = getFirstDate(item).split('-');
+      var yr = d[0], mo = parseInt(d[1]);
+      if (!grouped[yr]) grouped[yr] = {};
+      if (!grouped[yr][mo]) grouped[yr][mo] = [];
+      grouped[yr][mo].push(item);
+    });
+
+    var content = el('timeline-content');
+    content.innerHTML = '';
+    var years = Object.keys(grouped).sort();
+
+    if (years.length === 0) {
+      content.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ink3);"><p style="margin-top:10px;font-size:14px;">日付が入力された作品がありません</p></div>';
+      return;
+    }
+
+    years.forEach(function(year) {
+      var yearDiv = document.createElement('div');
+      yearDiv.style.cssText = 'margin-bottom:8px;';
+      var yearLabel = document.createElement('div');
+      yearLabel.className = 'tl-year-label';
+      yearLabel.textContent = year;
+      yearDiv.appendChild(yearLabel);
+
+      var months = Object.keys(grouped[year]).map(Number).sort(function(a,b){return a-b;});
+      months.forEach(function(month) {
+        var row = document.createElement('div');
+        row.className = 'tl-month-row';
+
+        var mlabel = document.createElement('div');
+        mlabel.className = 'tl-month-label';
+        mlabel.textContent = month + '月';
+
+        var line = document.createElement('div');
+        line.className = 'tl-vert-line';
+
+        var cardsWrap = document.createElement('div');
+        cardsWrap.className = 'tl-cards';
+
+        grouped[year][month].forEach(function(item) {
+          var card = document.createElement('div');
+          card.className = 'tl-card';
+          var typeStr = item.type ? ' / ' + item.type : '';
+          var stars = '';
+          for (var i = 1; i <= 3; i++) stars += i <= item.stars ? '★' : '☆';
+          card.innerHTML = '<div class="tl-card-img">'
+            + (item.photo ? '<img src="' + item.photo + '" alt="">' : '<span>' + genreIcon(item.genre) + '</span>')
+            + '<div class="tl-card-badge">' + item.genre + typeStr + '</div>'
+            + '</div>'
+            + '<div class="tl-card-name">' + item.name + '</div>'
+            + '<div class="tl-card-stars">' + stars + '</div>';
+          card.addEventListener('click', (function(id) {
+            return function() { openModal(id); };
+          })(item.id));
+          cardsWrap.appendChild(card);
+        });
+
+        row.appendChild(mlabel); row.appendChild(line); row.appendChild(cardsWrap);
+        yearDiv.appendChild(row);
+      });
+      content.appendChild(yearDiv);
+    });
+  }
+
+  // ===== HTMLダウンロード =====
+  function downloadTimeline() {
+    var dated = items.filter(function(x) { return getFirstDate(x); });
+    dated.sort(function(a, b) { return getFirstDate(a) < getFirstDate(b) ? -1 : 1; });
+    var grouped = {};
+    dated.forEach(function(item) {
+      var d = getFirstDate(item).split('-');
+      var yr = d[0], mo = parseInt(d[1]);
+      if (!grouped[yr]) grouped[yr] = {};
+      if (!grouped[yr][mo]) grouped[yr][mo] = [];
+      grouped[yr][mo].push(item);
+    });
+
+    var body = '';
+    Object.keys(grouped).sort().forEach(function(year) {
+      body += '<h2>' + year + '</h2>';
+      Object.keys(grouped[year]).map(Number).sort(function(a,b){return a-b;}).forEach(function(month) {
+        body += '<div style="display:flex;margin-bottom:20px;align-items:flex-start;">';
+        body += '<div style="width:50px;text-align:right;padding-right:12px;padding-top:8px;flex-shrink:0;font-family:monospace;font-size:14px;color:#666;">' + month + '月</div>';
+        body += '<div style="border-left:2px solid #ccc;padding-left:14px;display:flex;flex-wrap:wrap;gap:10px;">';
+        grouped[year][month].forEach(function(item) {
+          var stars = '';
+          for (var i=1;i<=3;i++) stars += i<=item.stars?'★':'☆';
+          body += '<div style="width:100px;border:1px solid #ddd;border-radius:5px;overflow:hidden;background:#fff;">';
+          body += item.photo ? '<img src="' + item.photo + '" style="width:100%;height:68px;object-fit:cover;" alt="">' : '<div style="width:100%;height:68px;background:#f0ede5;display:flex;align-items:center;justify-content:center;font-size:28px;">' + '-' + '</div>';
+          body += '<div style="padding:5px 6px;font-size:11px;font-weight:bold;line-height:1.3;">' + item.name + '</div>';
+          body += '<div style="padding:0 6px 5px;font-size:11px;color:#d4920a;">' + stars + '</div>';
+          body += '</div>';
+        });
+        body += '</div></div>';
+      });
+    });
+
+    var html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>作品ログ 年表</title>'
+      + '<style>body{font-family:sans-serif;background:#f5f0e8;padding:24px;max-width:900px;margin:0 auto;}h1{font-size:22px;margin-bottom:4px;}h2{font-family:monospace;color:#999;font-size:15px;margin:28px 0 8px;}</style>'
+      + '</head><body><h1>作品ログ 年表</h1>'
+      + '<p style="font-size:12px;color:#999;margin-bottom:20px;">出力日：' + new Date().toLocaleDateString('ja-JP') + ' / 全 ' + items.length + ' 件</p>'
+      + body + '</body></html>';
+
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'sakuhin-nenpo.html'; document.body.appendChild(a); a.click();
+    setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+  }
+
+  // ===== イベント登録 =====
+  // フィルター
+  document.querySelectorAll('.filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentFilter = btn.getAttribute('data-genre');
+      if (currentView === 'grid') renderGrid(); else renderTimeline();
+    });
+  });
+
+  // ビュー切り替え
+  el('view-grid-btn').addEventListener('click', function() {
+    currentView = 'grid';
+    el('view-grid-btn').classList.add('active'); el('view-tl-btn').classList.remove('active');
+    el('grid-view').style.display = 'grid'; el('timeline-view').style.display = 'none';
+    renderGrid();
+  });
+  el('view-tl-btn').addEventListener('click', function() {
+    currentView = 'timeline';
+    el('view-tl-btn').classList.add('active'); el('view-grid-btn').classList.remove('active');
+    el('grid-view').style.display = 'none'; el('timeline-view').style.display = 'block';
+    renderTimeline();
+  });
+
+  el('add-btn').addEventListener('click', function() { openModal(null); });
+  el('modal-close-btn').addEventListener('click', closeModal);
+  el('btn-cancel').addEventListener('click', closeModal);
+  el('modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+  el('btn-save').addEventListener('click', saveItem);
+  el('btn-delete').addEventListener('click', deleteItem);
+  el('add-date-btn').addEventListener('click', function() { addDateRow('', ''); });
+  el('dl-btn').addEventListener('click', downloadTimeline);
+
+  document.querySelectorAll('#star-input button').forEach(function(btn) {
+    btn.addEventListener('click', function() { setStar(parseInt(btn.getAttribute('data-val'))); });
+  });
+
+  el('f-photo').addEventListener('change', function() {
+    var file = this.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      photoData = e.target.result;
+      el('photo-preview').src = photoData; el('photo-preview').style.display = 'block';
+      el('photo-placeholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  el('f-memo-photo').addEventListener('change', function() {
+    var file = this.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      memoPhotoData = e.target.result;
+      el('memo-preview').src = memoPhotoData; el('memo-preview').style.display = 'block';
+      el('memo-placeholder').style.display = 'none'; el('memo-clear-btn').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  el('memo-clear-btn').addEventListener('click', function() {
+    memoPhotoData = null;
+    el('memo-preview').style.display = 'none'; el('memo-preview').src = '';
+    el('memo-placeholder').style.display = 'block'; el('memo-clear-btn').style.display = 'none';
+    el('f-memo-photo').value = '';
+  });
+
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+  // ===== データメニュー =====
+  el('data-menu-btn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    var menu = el('data-menu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  });
+  document.addEventListener('click', function() { el('data-menu').style.display = 'none'; });
+  el('data-menu').addEventListener('click', function(e) { e.stopPropagation(); });
+
+  // エクスポート
+  el('export-btn').addEventListener('click', function() {
+    el('data-menu').style.display = 'none';
+    var json = JSON.stringify(items, null, 2);
+    var blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    var d = new Date();
+    a.download = 'sakuhin-log-' + d.getFullYear() + ('0'+(d.getMonth()+1)).slice(-2) + ('0'+d.getDate()).slice(-2) + '.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+  });
+
+  // インポート
+  el('import-btn').addEventListener('click', function() {
+    el('data-menu').style.display = 'none';
+    el('import-file').click();
+  });
+  el('import-file').addEventListener('change', function() {
+    var file = this.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var imported = JSON.parse(e.target.result);
+        if (!Array.isArray(imported)) throw new Error('invalid');
+        if (!confirm('インポートすると現在のデータに追加されます（上書きではありません）。続けますか？')) return;
+        // IDの重複を避けて追加
+        var existingIds = new Set(items.map(function(x) { return x.id; }));
+        var added = 0;
+        imported.forEach(function(item) {
+          if (!existingIds.has(item.id)) { items.unshift(item); added++; }
+        });
+        saveData();
+        if (currentView === 'grid') renderGrid(); else renderTimeline();
+        alert(added + ' 件をインポートしました。');
+      } catch(err) {
+        alert('インポートに失敗しました。正しいJSONファイルか確認してください。');
+      }
+    };
+    reader.readAsText(file);
+    this.value = '';
+  });
+
+  // Driveガイド（削除済み）
+
+  // ===== Google Drive 連携 =====
+  var CLIENT_ID = '586982625413-hto13tgg5sasgh4cdmvh8jibb7kbs2va.apps.googleusercontent.com';
+  var SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+  var DRIVE_FILE_NAME = 'sakuhin-log-data.json';
+  var driveFileId = null;
+  var tokenClient = null;
+  var accessToken = null;
+
+  function driveSetStatus(msg) {
+    var s = el('drive-status');
+    s.textContent = msg; s.style.display = msg ? 'block' : 'none';
+  }
+
+  function driveSetLoggedIn(loggedIn) {
+    el('drive-login-btn').style.display  = loggedIn ? 'none'  : 'block';
+    el('drive-save-btn').style.display   = loggedIn ? 'block' : 'none';
+    el('drive-load-btn').style.display   = loggedIn ? 'block' : 'none';
+    el('drive-logout-btn').style.display = loggedIn ? 'block' : 'none';
+  }
+
+  function initGoogleAuth() {
+    if (typeof google === 'undefined' || !google.accounts) {
+      setTimeout(initGoogleAuth, 500); return;
+    }
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: function(resp) {
+        if (resp.error) { driveSetStatus('ログイン失敗: ' + resp.error); return; }
+        accessToken = resp.access_token;
+        driveSetLoggedIn(true);
+        driveSetStatus('ログイン済み');
+        driveFindFile(function() { driveAutoSync(); });
+      }
+    });
+    // 保存済みトークンがあれば復元
+    var saved = localStorage.getItem('drive-token');
+    if (saved) {
+      accessToken = saved;
+      driveSetLoggedIn(true);
+      driveSetStatus('ログイン済み（前回セッション）');
+      driveFindFile(function() {});
+    }
+  }
+
+  el('drive-login-btn').addEventListener('click', function() {
+    if (!tokenClient) { driveSetStatus('Google SDKの読み込み中…'); initGoogleAuth(); return; }
+    tokenClient.requestAccessToken();
+  });
+
+  el('drive-logout-btn').addEventListener('click', function() {
+    if (accessToken) google.accounts.oauth2.revoke(accessToken, function() {});
+    accessToken = null; driveFileId = null;
+    localStorage.removeItem('drive-token');
+    driveSetLoggedIn(false); driveSetStatus('');
+  });
+
+  el('drive-save-btn').addEventListener('click', function() {
+    el('data-menu').style.display = 'none';
+    driveSave(function() { driveSetStatus('保存しました: ' + new Date().toLocaleString('ja-JP')); });
+  });
+
+  el('drive-load-btn').addEventListener('click', function() {
+    el('data-menu').style.display = 'none';
+    driveLoad(function(loaded) {
+      if (!loaded) { driveSetStatus('データが見つかりませんでした'); return; }
+      if (!confirm('Driveのデータで上書きしますか？')) return;
+      items = loaded;
+      saveData();
+      if (currentView === 'grid') renderGrid(); else renderTimeline();
+      driveSetStatus('読み込み完了: ' + loaded.length + ' 件');
+    });
+  });
+
+  // Driveのappdata内でファイルを検索
+  function driveFindFile(cb) {
+    fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27' + DRIVE_FILE_NAME + '%27&fields=files(id,name)', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.files && data.files.length > 0) driveFileId = data.files[0].id;
+      if (cb) cb();
+    }).catch(function() { if (cb) cb(); });
+  }
+
+  // Driveに保存
+  function driveSave(cb) {
+    if (!accessToken) { driveSetStatus('先にログインしてください'); return; }
+    driveSetStatus('保存中…');
+    var content = JSON.stringify(items);
+    var boundary = '-------314159265358979323846';
+    var body = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'
+      + JSON.stringify({ name: DRIVE_FILE_NAME, parents: driveFileId ? undefined : ['appDataFolder'] })
+      + '\r\n--' + boundary + '\r\nContent-Type: application/json\r\n\r\n'
+      + content + '\r\n--' + boundary + '--';
+    var url = driveFileId
+      ? 'https://www.googleapis.com/upload/drive/v3/files/' + driveFileId + '?uploadType=multipart'
+      : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    fetch(url, {
+      method: driveFileId ? 'PATCH' : 'POST',
+      headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'multipart/related; boundary="' + boundary + '"' },
+      body: body
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.id) { driveFileId = data.id; localStorage.setItem('drive-token', accessToken); }
+      if (cb) cb();
+    }).catch(function(e) { driveSetStatus('保存失敗: ' + e.message); });
+  }
+
+  // Driveから読み込み
+  function driveLoad(cb) {
+    if (!accessToken) { driveSetStatus('先にログインしてください'); return; }
+    driveSetStatus('読み込み中…');
+    driveFindFile(function() {
+      if (!driveFileId) { if (cb) cb(null); return; }
+      fetch('https://www.googleapis.com/drive/v3/files/' + driveFileId + '?alt=media', {
+        headers: { Authorization: 'Bearer ' + accessToken }
+      }).then(function(r) { return r.json(); }).then(function(data) {
+        if (cb) cb(Array.isArray(data) ? data : null);
+      }).catch(function() { if (cb) cb(null); });
+    });
+  }
+
+  // 自動同期（ページ読み込み時・保存時）
+  function driveAutoSync() {
+    if (!accessToken || !driveFileId) return;
+    driveLoad(function(loaded) {
+      if (!loaded) { driveSave(function() {}); return; }
+      // Drive側が新しければ取り込み
+      var driveNewer = loaded.length > 0 && items.length === 0;
+      if (driveNewer) {
+        items = loaded; saveData();
+        if (currentView === 'grid') renderGrid(); else renderTimeline();
+        driveSetStatus('Driveから自動同期しました');
+      } else {
+        driveSave(function() { driveSetStatus('自動同期完了'); });
+      }
+    });
+  }
+
+  // saveDataをフックしてDriveにも自動保存
+  var _origSaveData = saveData;
+  saveData = function() {
+    _origSaveData();
+    if (accessToken) driveSave(function() { driveSetStatus('自動保存: ' + new Date().toLocaleTimeString('ja-JP')); });
+  };
+
+  // SDK読み込み後に初期化
+  window.addEventListener('load', function() { setTimeout(initGoogleAuth, 800); });
+
+  // ===== PWA: Service Worker登録 =====
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sakuhin-log/sw.js').catch(function() {});
+  }
+
+  // 初期レンダリング
+  renderGrid();
+
+})();
+
+</script>
+</body>
+</html>
