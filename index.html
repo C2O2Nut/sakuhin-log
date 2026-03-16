@@ -1157,11 +1157,19 @@
       try {
         var imported = JSON.parse(e.target.result);
         if (!Array.isArray(imported)) throw new Error('invalid');
-        if (!confirm(imported.length + ' 件のデータで上書きします。現在のデータは消えます。続けますか？')) return;
-        items = imported;
+        if (!confirm(imported.length + ' 件をインポートします。重複タイトルは上書き、新規は追加されます。続けますか？')) return;
+        var added = 0, updated = 0;
+        imported.forEach(function(imp) {
+          var idx = -1;
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].name === imp.name) { idx = i; break; }
+          }
+          if (idx >= 0) { items[idx] = imp; updated++; }
+          else { items.unshift(imp); added++; }
+        });
         saveData();
         if (currentView === 'grid') renderGrid(); else renderTimeline();
-        showToast(imported.length + ' 件のインポート成功', 'success');
+        showToast('追加 ' + added + ' 件・更新 ' + updated + ' 件', 'success');
       } catch(err) {
         showToast('インポートに失敗しました', 'error');
       }
@@ -1283,8 +1291,16 @@
             });
 
             if (newItems.length === 0) { hideLoading(); showToast('インポートできる本が見つかりませんでした', 'error'); return; }
-            if (!confirm(newItems.length + ' 冊で上書きします。現在のデータは消えます。続けますか？')) { hideLoading(); return; }
-            items = newItems;
+            if (!confirm(newItems.length + ' 冊をインポートします。重複タイトルは上書き、新規は追加されます。続けますか？')) { hideLoading(); return; }
+            var added = 0, updated = 0;
+            newItems.forEach(function(imp) {
+              var idx = -1;
+              for (var i = 0; i < items.length; i++) {
+                if (items[i].name === imp.name) { idx = i; break; }
+              }
+              if (idx >= 0) { items[idx] = imp; updated++; }
+              else { items.unshift(imp); added++; }
+            });
             saveData();
             if (currentView === 'grid') renderGrid(); else renderTimeline();
             hideLoading();
@@ -1328,7 +1344,8 @@
           return {
             appid: String(g.appid),
             name: g.name || 'Unknown',
-            hours: g.playtime_forever ? (g.playtime_forever / 60).toFixed(1) : '0'
+            hours: g.playtime_forever ? (g.playtime_forever / 60).toFixed(1) : '0',
+            lastPlayed: g.rtime_last_played || 0
           };
         });
       }
@@ -1338,7 +1355,8 @@
           return {
             appid: String(g.appid || g.app_id || ''),
             name: g.name || g.game_name || 'Unknown',
-            hours: g.playtime_forever ? (g.playtime_forever / 60).toFixed(1) : (g.hours || '0')
+            hours: g.playtime_forever ? (g.playtime_forever / 60).toFixed(1) : (g.hours || '0'),
+            lastPlayed: g.rtime_last_played || 0
           };
         });
       }
@@ -1348,7 +1366,8 @@
           return {
             appid: String(g.appid || g.app_id || ''),
             name: g.name || g.game_name || 'Unknown',
-            hours: g.playtime_forever ? (g.playtime_forever / 60).toFixed(1) : (g.hours || '0')
+            hours: g.playtime_forever ? (g.playtime_forever / 60).toFixed(1) : (g.hours || '0'),
+            lastPlayed: g.rtime_last_played || 0
           };
         });
       }
@@ -1406,6 +1425,7 @@
             appid: String(g.appid),
             name: g.name || 'Unknown',
             hours: g.playtime_forever ? (g.playtime_forever / 60).toFixed(1) : '0',
+            lastPlayed: g.rtime_last_played || 0,
             img: g.img_header_url || ''
           };
         }).sort(function(a,b) { return parseFloat(b.hours) - parseFloat(a.hours); });
@@ -1443,7 +1463,8 @@
       img.onerror = function() { this.style.display='none'; };
       var info = document.createElement('span');
       info.style.cssText = 'flex:1;';
-      info.innerHTML = g.name + '<span style="color:var(--ink3);font-size:11px;margin-left:6px;">' + g.hours + 'h' + (already ? ' (登録済み)' : '') + '</span>';
+      var lastDate = g.lastPlayed ? new Date(g.lastPlayed * 1000).toLocaleDateString('ja-JP') : '';
+      info.innerHTML = g.name + '<span style="color:var(--ink3);font-size:11px;margin-left:6px;">' + g.hours + 'h' + (lastDate ? ' / 最終:' + lastDate : '') + (already ? ' (登録済み)' : '') + '</span>';
       row.appendChild(cb); row.appendChild(img); row.appendChild(info);
       list.appendChild(row);
     });
@@ -1451,34 +1472,46 @@
 
   el('steam-import-confirm-btn').addEventListener('click', function() {
     var checkboxes = el('steam-game-list').querySelectorAll('input[type=checkbox]:checked');
-    var newItems = [];
+    var toImport = [];
     checkboxes.forEach(function(cb) {
       var idx = parseInt(cb.getAttribute('data-idx'));
-      var g = steamGames[idx];
-      var exists = items.some(function(x) { return x.name === g.name; });
-      if (exists) return;
-      newItems.push({
+      toImport.push(steamGames[idx]);
+    });
+    if (!toImport.length) { showToast('選択されたゲームがありません', 'error'); return; }
+    if (!confirm(toImport.length + ' 本のゲームをインポートします。重複タイトルは上書き、新規は追加されます。続けますか？')) return;
+
+    var added = 0, updated = 0;
+    toImport.forEach(function(g) {
+      var dates = [];
+      // rtime_last_played があれば最終プレイ日を終了日として入れる
+      if (g.lastPlayed) {
+        dates = [{ start: '', end: new Date(g.lastPlayed * 1000).toISOString().slice(0, 10) }];
+      }
+      var newItem = {
         id: Date.now() + Math.random(),
         name: g.name,
         genre: 'ゲーム',
         type: '',
         stars: 0,
         tags: [],
-        dates: [],
+        dates: dates,
         status: parseFloat(g.hours) > 0 ? '完了' : '未着手',
         memo: g.hours + ' 時間プレイ',
         photo: null,
         memoPhoto: null,
         updatedAt: Date.now()
-      });
+      };
+      var idx = -1;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].name === g.name) { idx = i; break; }
+      }
+      if (idx >= 0) { items[idx] = newItem; updated++; }
+      else { items.unshift(newItem); added++; }
     });
-    if (!newItems.length) { showToast('選択されたゲームがありません', 'error'); return; }
-    if (!confirm(newItems.length + ' 本のゲームで上書きします。現在のデータは消えます。続けますか？')) return;
-    items = newItems;
     saveData();
     el('steam-modal').classList.remove('open');
     if (currentView === 'grid') renderGrid(); else renderTimeline();
-    showToast(newItems.length + ' 件のインポート成功', 'success');
+    showToast('追加 ' + added + ' 件・更新 ' + updated + ' 件', 'success');
   });
 
   // ===== テーマ・カラーカスタマイズ =====
@@ -1568,7 +1601,7 @@
   loadTheme();
 
   var CLIENT_ID = '586982625413-hto13tgg5sasgh4cdmvh8jibb7kbs2va.apps.googleusercontent.com';
-  var SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+  var SCOPES = 'https://www.googleapis.com/auth/drive.file';
   var DRIVE_FILE_NAME = 'sakuhin-log-data.json';
   var driveFileId = null;
   var tokenClient = null;
@@ -1632,6 +1665,7 @@
     if (accessToken) google.accounts.oauth2.revoke(accessToken, function() {});
     accessToken = null; driveFileId = null;
     localStorage.removeItem('drive-token');
+    localStorage.removeItem('drive-file-id');
     driveSetLoggedIn(false); driveSetStatus('');
   });
 
@@ -1654,10 +1688,21 @@
 
   // Driveのappdata内でファイルを検索
   function driveFindFile(cb) {
-    fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27' + DRIVE_FILE_NAME + '%27&fields=files(id,name)', {
+    // まずlocalStorageからfileIdを復元
+    if (!driveFileId) {
+      var saved = localStorage.getItem('drive-file-id');
+      if (saved) driveFileId = saved;
+    }
+    // fileIdが既にあれば検索不要
+    if (driveFileId) { if (cb) cb(); return; }
+    // Driveで名前検索（通常フォルダ、ゴミ箱以外）
+    fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent("name='" + DRIVE_FILE_NAME + "' and trashed=false") + '&fields=files(id,name)&spaces=drive', {
       headers: { Authorization: 'Bearer ' + accessToken }
     }).then(function(r) { return r.json(); }).then(function(data) {
-      if (data.files && data.files.length > 0) driveFileId = data.files[0].id;
+      if (data.files && data.files.length > 0) {
+        driveFileId = data.files[0].id;
+        localStorage.setItem('drive-file-id', driveFileId);
+      }
       if (cb) cb();
     }).catch(function() { if (cb) cb(); });
   }
@@ -1667,22 +1712,40 @@
     if (!accessToken) { driveSetStatus('先にログインしてください'); return; }
     driveSetStatus('保存中…');
     var content = JSON.stringify(items);
-    var boundary = '-------314159265358979323846';
-    var body = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'
-      + JSON.stringify({ name: DRIVE_FILE_NAME, parents: driveFileId ? undefined : ['appDataFolder'] })
-      + '\r\n--' + boundary + '\r\nContent-Type: application/json\r\n\r\n'
-      + content + '\r\n--' + boundary + '--';
-    var url = driveFileId
-      ? 'https://www.googleapis.com/upload/drive/v3/files/' + driveFileId + '?uploadType=multipart'
-      : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
-    fetch(url, {
-      method: driveFileId ? 'PATCH' : 'POST',
-      headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'multipart/related; boundary="' + boundary + '"' },
-      body: body
-    }).then(function(r) { return r.json(); }).then(function(data) {
-      if (data.id) { driveFileId = data.id; localStorage.setItem('drive-token', accessToken); }
-      if (cb) cb();
-    }).catch(function(e) { driveSetStatus('保存失敗: ' + e.message); });
+
+    var doSave = function() {
+      var boundary = '-------314159265358979323846';
+      var meta = JSON.stringify(
+        driveFileId
+          ? { name: DRIVE_FILE_NAME }
+          : { name: DRIVE_FILE_NAME }
+      );
+      var body = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'
+        + meta + '\r\n--' + boundary + '\r\nContent-Type: application/json\r\n\r\n'
+        + content + '\r\n--' + boundary + '--';
+      var url = driveFileId
+        ? 'https://www.googleapis.com/upload/drive/v3/files/' + driveFileId + '?uploadType=multipart'
+        : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+      fetch(url, {
+        method: driveFileId ? 'PATCH' : 'POST',
+        headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'multipart/related; boundary="' + boundary + '"' },
+        body: body
+      }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.id) {
+          driveFileId = data.id;
+          localStorage.setItem('drive-token', accessToken);
+          localStorage.setItem('drive-file-id', driveFileId);
+        }
+        if (cb) cb();
+      }).catch(function(e) { driveSetStatus('保存失敗: ' + e.message); });
+    };
+
+    // fileIdがなければまず検索してから保存
+    if (!driveFileId) {
+      driveFindFile(function() { doSave(); });
+    } else {
+      doSave();
+    }
   }
 
   // Driveから読み込み
@@ -1693,8 +1756,13 @@
       if (!driveFileId) { if (cb) cb(null); return; }
       fetch('https://www.googleapis.com/drive/v3/files/' + driveFileId + '?alt=media', {
         headers: { Authorization: 'Bearer ' + accessToken }
-      }).then(function(r) { return r.json(); }).then(function(data) {
-        if (cb) cb(Array.isArray(data) ? data : null);
+      }).then(function(r) { return r.text(); }).then(function(text) {
+        try {
+          var data = JSON.parse(text);
+          if (cb) cb(Array.isArray(data) ? data : null);
+        } catch(e) {
+          if (cb) cb(null);
+        }
       }).catch(function() { if (cb) cb(null); });
     });
   }
