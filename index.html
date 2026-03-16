@@ -249,9 +249,43 @@
     color: var(--ink); cursor: pointer; transition: background 0.1s;
   }
   .dmenu-btn:hover { background: var(--surface2); }
+
+  /* ローディングスピナー（右下） */
+  #loading-spinner {
+    display: none; position: fixed; bottom: 24px; right: 24px; z-index: 500;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--ink); box-shadow: 0 4px 16px var(--shadow);
+    align-items: center; justify-content: center;
+  }
+  #loading-spinner.show { display: flex; }
+  .spinner-ring {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2.5px solid rgba(255,255,255,0.2);
+    border-top-color: #fff;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* トースト通知（下中央） */
+  #toast {
+    display: none; position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    z-index: 600; background: var(--ink); color: var(--bg);
+    padding: 10px 24px; border-radius: 24px;
+    font-family: 'Noto Sans JP', sans-serif; font-size: 13px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    white-space: nowrap; pointer-events: none;
+    animation: toastIn 0.2s ease;
+  }
+  #toast.show { display: block; }
+  #toast.success { background: #3a7a4a; }
+  #toast.error   { background: #a03030; }
+  @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
 </style>
 </head>
 <body>
+
+<div id="loading-spinner"><div class="spinner-ring"></div></div>
+<div id="toast"></div>
 
 <header>
   <h1>作品ログ</h1>
@@ -288,6 +322,14 @@
   <button class="filter-btn" data-genre="小説">小説</button>
   <button class="filter-btn" data-genre="マンガ">マンガ</button>
   <button class="filter-btn" data-genre="アニメ">アニメ</button>
+  <div style="position:relative;">
+    <button class="filter-btn" id="tag-filter-btn">タグ</button>
+    <div id="tag-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px var(--shadow);z-index:200;min-width:200px;max-width:280px;padding:10px 12px;">
+      <div style="font-size:11px;color:var(--ink3);margin-bottom:8px;letter-spacing:0.05em;">タグで絞り込み</div>
+      <div id="tag-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      <button type="button" id="tag-clear-btn" style="margin-top:10px;font-size:11px;background:none;border:none;color:var(--ink3);cursor:pointer;padding:0;">絞り込みを解除</button>
+    </div>
+  </div>
   <div class="toolbar-right">
     <button class="view-btn active" id="view-grid-btn">カード</button>
     <button class="view-btn" id="view-tl-btn">年表</button>
@@ -483,6 +525,7 @@
   try { items = JSON.parse(localStorage.getItem('sakuhin-log') || '[]'); } catch(e) { items = []; }
 
   var currentFilter = 'all';
+  var currentTagFilter = null; // null = 絞り込みなし
   var currentView = 'grid';
   var editingId = null;
   var currentStar = 0;
@@ -495,6 +538,18 @@
 
   // ===== ユーティリティ =====
   function el(id) { return document.getElementById(id); }
+
+  var _toastTimer = null;
+  function showToast(msg, type) {
+    var t = el('toast');
+    t.textContent = msg;
+    t.className = 'show' + (type ? ' ' + type : '');
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(function() { t.className = ''; }, 2800);
+  }
+
+  function showLoading() { el('loading-spinner').classList.add('show'); }
+  function hideLoading() { el('loading-spinner').classList.remove('show'); }
 
   function starsHTML(n) {
     var h = '';
@@ -659,14 +714,24 @@
   }
 
   // ===== カードビュー =====
+  function getFiltered() {
+    var result = currentFilter === 'all' ? items : items.filter(function(x) { return x.genre === currentFilter; });
+    if (currentTagFilter) {
+      result = result.filter(function(x) { return (x.tags||[]).indexOf(currentTagFilter) !== -1; });
+    }
+    return result;
+  }
+
   function renderGrid() {
-    var filtered = currentFilter === 'all' ? items : items.filter(function(x) { return x.genre === currentFilter; });
+    var filtered = getFiltered();
     el('header-count').textContent = items.length + ' 件';
-    el('count-bar').textContent = currentFilter === 'all' ? '全 ' + items.length + ' 件' : filtered.length + ' 件（' + currentFilter + '）';
+    var filterLabel = currentTagFilter ? (currentFilter === 'all' ? '' : currentFilter + ' / ') + '#' + currentTagFilter : currentFilter === 'all' ? '' : currentFilter;
+    el('count-bar').textContent = filtered.length + ' 件' + (filterLabel ? '（' + filterLabel + '）' : '（全件）');
 
     var grid = el('grid-view');
     if (filtered.length === 0) {
-      grid.innerHTML = '<div class="empty"><p>' + (currentFilter === 'all' ? 'まだ作品がありません。「＋ 追加」から登録しよう！' : currentFilter + 'の作品がありません') + '</p></div>';
+      var emptyMsg = currentTagFilter ? '#' + currentTagFilter + ' の作品がありません' : currentFilter === 'all' ? 'まだ作品がありません。「＋ 追加」から登録しよう！' : currentFilter + 'の作品がありません';
+      grid.innerHTML = '<div class="empty"><p>' + emptyMsg + '</p></div>';
       return;
     }
 
@@ -706,8 +771,9 @@
   function renderTimeline() {
     el('header-count').textContent = items.length + ' 件';
 
-    var dated = items.filter(function(x) { return getFirstDate(x); });
-    dated.sort(function(a, b) { return getFirstDate(a) < getFirstDate(b) ? -1 : 1; });
+    var dated = getFiltered().filter(function(x) { return getFirstDate(x); });
+    // 新しい順（降順）
+    dated.sort(function(a, b) { return getFirstDate(a) > getFirstDate(b) ? -1 : 1; });
 
     var grouped = {};
     dated.forEach(function(item) {
@@ -720,22 +786,43 @@
 
     var content = el('timeline-content');
     content.innerHTML = '';
-    var years = Object.keys(grouped).sort();
+    // 年も降順
+    var years = Object.keys(grouped).sort(function(a,b){return b-a;});
 
     if (years.length === 0) {
       content.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ink3);"><p style="margin-top:10px;font-size:14px;">日付が入力された作品がありません</p></div>';
       return;
     }
 
+    // 年の目次バー
+    var tocBar = document.createElement('div');
+    tocBar.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;padding:0 24px 20px;';
+    years.forEach(function(year) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = year;
+      btn.style.cssText = 'padding:4px 14px;border:1.5px solid var(--border);border-radius:20px;background:none;font-family:"DM Mono",monospace;font-size:13px;color:var(--ink2);cursor:pointer;transition:all 0.15s;';
+      btn.addEventListener('mouseenter', function(){ this.style.background='var(--surface2)'; });
+      btn.addEventListener('mouseleave', function(){ this.style.background='none'; });
+      btn.addEventListener('click', function() {
+        var target = document.getElementById('tl-year-' + year);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      tocBar.appendChild(btn);
+    });
+    content.appendChild(tocBar);
+
     years.forEach(function(year) {
       var yearDiv = document.createElement('div');
-      yearDiv.style.cssText = 'margin-bottom:8px;';
+      yearDiv.id = 'tl-year-' + year;
+      yearDiv.style.cssText = 'margin-bottom:8px;scroll-margin-top:60px;';
       var yearLabel = document.createElement('div');
       yearLabel.className = 'tl-year-label';
       yearLabel.textContent = year;
       yearDiv.appendChild(yearLabel);
 
-      var months = Object.keys(grouped[year]).map(Number).sort(function(a,b){return a-b;});
+      // 月も降順
+      var months = Object.keys(grouped[year]).map(Number).sort(function(a,b){return b-a;});
       months.forEach(function(month) {
         var row = document.createElement('div');
         row.className = 'tl-month-row';
@@ -821,14 +908,82 @@
   }
 
   // ===== イベント登録 =====
-  // フィルター
-  document.querySelectorAll('.filter-btn').forEach(function(btn) {
+  // フィルター（ジャンル）
+  document.querySelectorAll('.filter-btn[data-genre]').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.filter-btn[data-genre]').forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
       currentFilter = btn.getAttribute('data-genre');
       if (currentView === 'grid') renderGrid(); else renderTimeline();
     });
+  });
+
+  // タグドロップダウン
+  function getAllTags() {
+    var tagSet = {};
+    items.forEach(function(item) {
+      (item.tags || []).forEach(function(t) { if (t) tagSet[t] = (tagSet[t] || 0) + 1; });
+    });
+    return Object.keys(tagSet).sort(function(a,b) { return tagSet[b]-tagSet[a]; }).map(function(t) { return { tag: t, count: tagSet[t] }; });
+  }
+
+  function renderTagDropdown() {
+    var tags = getAllTags();
+    var list = el('tag-list');
+    list.innerHTML = '';
+    if (tags.length === 0) {
+      list.innerHTML = '<span style="font-size:12px;color:var(--ink3);">タグがありません</span>';
+      return;
+    }
+    tags.forEach(function(t) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      var isActive = currentTagFilter === t.tag;
+      btn.style.cssText = 'padding:3px 10px;border-radius:12px;border:1.5px solid ' + (isActive ? 'var(--accent)' : 'var(--border)') + ';background:' + (isActive ? 'var(--accent)' : 'transparent') + ';color:' + (isActive ? '#fff' : 'var(--ink2)') + ';font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.12s;';
+      btn.textContent = t.tag + ' ' + t.count;
+      btn.addEventListener('click', function() {
+        if (currentTagFilter === t.tag) {
+          currentTagFilter = null;
+          el('tag-filter-btn').classList.remove('active');
+        } else {
+          currentTagFilter = t.tag;
+          el('tag-filter-btn').classList.add('active');
+          el('tag-filter-btn').style.background = 'var(--ink)';
+          el('tag-filter-btn').style.color = 'var(--bg)';
+          el('tag-filter-btn').style.borderColor = 'var(--ink)';
+        }
+        el('tag-dropdown').style.display = 'none';
+        if (currentView === 'grid') renderGrid(); else renderTimeline();
+      });
+      list.appendChild(btn);
+    });
+  }
+
+  el('tag-filter-btn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    var dd = el('tag-dropdown');
+    if (dd.style.display === 'none') {
+      renderTagDropdown();
+      dd.style.display = 'block';
+    } else {
+      dd.style.display = 'none';
+    }
+  });
+
+  el('tag-clear-btn').addEventListener('click', function() {
+    currentTagFilter = null;
+    var btn = el('tag-filter-btn');
+    btn.classList.remove('active');
+    btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+    el('tag-dropdown').style.display = 'none';
+    if (currentView === 'grid') renderGrid(); else renderTimeline();
+  });
+
+  // ドロップダウン外クリックで閉じる
+  document.addEventListener('click', function(e) {
+    if (!el('tag-filter-btn').contains(e.target) && !el('tag-dropdown').contains(e.target)) {
+      el('tag-dropdown').style.display = 'none';
+    }
   });
 
   // ビュー切り替え
@@ -927,9 +1082,9 @@
         items = imported;
         saveData();
         if (currentView === 'grid') renderGrid(); else renderTimeline();
-        alert(imported.length + ' 件をインポートしました。');
+        showToast(imported.length + ' 件のインポート成功', 'success');
       } catch(err) {
-        alert('インポートに失敗しました。正しいJSONファイルか確認してください。');
+        showToast('インポートに失敗しました', 'error');
       }
     };
     reader.readAsText(file);
@@ -955,6 +1110,7 @@
   });
 
   function importBookmory(arrayBuffer) {
+    showLoading();
     // JSZipでZIPを解凍
     var script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
@@ -1047,16 +1203,17 @@
               });
             });
 
-            if (newItems.length === 0) { alert('インポートできる本が見つかりませんでした'); return; }
-            if (!confirm(newItems.length + ' 冊で上書きします。現在のデータは消えます。続けますか？')) return;
+            if (newItems.length === 0) { hideLoading(); showToast('インポートできる本が見つかりませんでした', 'error'); return; }
+            if (!confirm(newItems.length + ' 冊で上書きします。現在のデータは消えます。続けますか？')) { hideLoading(); return; }
             items = newItems;
             saveData();
             if (currentView === 'grid') renderGrid(); else renderTimeline();
-            alert(newItems.length + ' 冊をインポートしました！');
+            hideLoading();
+            showToast(newItems.length + ' 冊のインポート成功', 'success');
           });
         };
         document.head.appendChild(s2);
-      }).catch(function(e) { alert('読み込み失敗: ' + e.message); });
+      }).catch(function(e) { hideLoading(); showToast('読み込み失敗: ' + e.message, 'error'); });
     };
     document.head.appendChild(script);
   }
@@ -1078,17 +1235,15 @@
 
   el('steam-fetch-btn').addEventListener('click', function() {
     var rawId = el('steam-id-input').value.trim();
-    if (!rawId) { alert('Steam IDを入力してください'); return; }
+    if (!rawId) { showToast('Steam IDを入力してください', 'error'); return; }
     el('steam-fetch-btn').textContent = '取得中…';
     el('steam-fetch-btn').disabled = true;
+    showLoading();
 
-    // SteamIDの解決（数字17桁 or カスタムURL）
-    // CORS回避のためAllOriginsプロキシを使用
     var isNumeric = /^\d{17}$/.test(rawId);
     var steamId64 = isNumeric ? rawId : null;
 
     function fetchGames(sid) {
-      // 複数プロキシをフォールバックで試みる
       var proxies = [
         'https://corsproxy.io/?',
         'https://api.codetabs.com/v1/proxy?quest='
@@ -1097,10 +1252,12 @@
 
       function tryProxy(idx) {
         if (idx >= proxies.length) {
+          hideLoading();
           el('steam-fetch-btn').textContent = '取得する';
           el('steam-fetch-btn').disabled = false;
           el('steam-result').style.display = 'block';
           el('steam-result-msg').innerHTML = '取得失敗。Steamの設定でゲームライブラリとプロフィールを<b>公開</b>にしてから再試行してください。';
+          showToast('Steamの取得に失敗しました', 'error');
           return;
         }
         fetch(proxies[idx] + encodeURIComponent(targetUrl))
@@ -1118,8 +1275,10 @@
               if (appid && name) steamGames.push({ appid: appid, name: name, hours: hours });
             });
             renderSteamList();
+            hideLoading();
             el('steam-fetch-btn').textContent = '取得する';
             el('steam-fetch-btn').disabled = false;
+            showToast(steamGames.length + ' 件のゲームを取得しました', 'success');
           }).catch(function() { tryProxy(idx + 1); });
       }
       tryProxy(0);
@@ -1208,13 +1367,13 @@
         updatedAt: Date.now()
       });
     });
-    if (!newItems.length) { alert('選択されたゲームがありません'); return; }
+    if (!newItems.length) { showToast('選択されたゲームがありません', 'error'); return; }
     if (!confirm(newItems.length + ' 本のゲームで上書きします。現在のデータは消えます。続けますか？')) return;
     items = newItems;
     saveData();
     el('steam-modal').classList.remove('open');
     if (currentView === 'grid') renderGrid(); else renderTimeline();
-    alert(newItems.length + ' 件をインポートしました！');
+    showToast(newItems.length + ' 件のインポート成功', 'success');
   });
 
   // ===== テーマ・カラーカスタマイズ =====
@@ -1310,9 +1469,21 @@
   var tokenClient = null;
   var accessToken = null;
 
-  function driveSetStatus(msg) {
+  function driveSetStatus(msg, type) {
     var s = el('drive-status');
     s.textContent = msg; s.style.display = msg ? 'block' : 'none';
+    if (!msg) { hideLoading(); return; }
+    // ローディング中か完了かで切り替え
+    if (msg.indexOf('中…') !== -1 || msg.indexOf('読み込み中') !== -1) {
+      showLoading();
+    } else {
+      hideLoading();
+      if (msg && msg.indexOf('失敗') === -1 && msg.indexOf('エラー') === -1) {
+        showToast(msg, type || 'success');
+      } else if (msg) {
+        showToast(msg, 'error');
+      }
+    }
   }
 
   function driveSetLoggedIn(loggedIn) {
