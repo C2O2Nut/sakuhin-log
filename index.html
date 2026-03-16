@@ -329,7 +329,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.1.2</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.1.3</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -355,7 +355,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.1.2</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.1.3</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -631,7 +631,7 @@
   var items = [];
   try { items = JSON.parse(localStorage.getItem('sakuhin-log') || '[]'); } catch(e) { items = []; }
 
-  var currentFilter = 'all';
+  var currentFilter = new Set(); // 空 = すべて表示
   var currentTagFilter = null;
   var currentView = 'grid';
   var currentLayout = localStorage.getItem('sakuhin-layout') || 'normal';
@@ -896,7 +896,7 @@
   }
 
   function getFiltered() {
-    var result = currentFilter === 'all' ? items.slice() : items.filter(function(x) { return x.genre === currentFilter; });
+    var result = currentFilter.size === 0 ? items.slice() : items.filter(function(x) { return currentFilter.has(x.genre); });
     if (currentTagFilter) {
       result = result.filter(function(x) { return (x.tags||[]).indexOf(currentTagFilter) !== -1; });
     }
@@ -935,7 +935,9 @@
   function renderGrid() {
     var filtered = getSorted(getFiltered());
     el('header-count').textContent = items.length + ' 件';
-    var filterLabel = currentTagFilter ? (currentFilter === 'all' ? '' : currentFilter + ' / ') + '#' + currentTagFilter : currentFilter === 'all' ? '' : currentFilter;
+    var filterLabel = currentTagFilter
+      ? (currentFilter.size > 0 ? Array.from(currentFilter).join('・') + ' / ' : '') + '#' + currentTagFilter
+      : currentFilter.size > 0 ? Array.from(currentFilter).join('・') : '';
     el('count-bar').textContent = filtered.length + ' 件' + (filterLabel ? '（' + filterLabel + '）' : '（全件）');
 
     var grid = el('grid-view');
@@ -943,7 +945,11 @@
     grid.className = currentLayout === 'compact' ? 'grid compact' : 'grid';
 
     if (filtered.length === 0) {
-      var emptyMsg = currentTagFilter ? '#' + currentTagFilter + ' の作品がありません' : currentFilter === 'all' ? 'まだ作品がありません。「＋ 追加」から登録しよう！' : currentFilter + 'の作品がありません';
+      var emptyMsg = currentTagFilter
+        ? '#' + currentTagFilter + ' の作品がありません'
+        : currentFilter.size > 0
+          ? Array.from(currentFilter).join('・') + 'の作品がありません'
+          : 'まだ作品がありません。「＋ 追加」から登録しよう！';
       grid.innerHTML = '<div class="empty"><p>' + emptyMsg + '</p></div>';
       return;
     }
@@ -1167,12 +1173,33 @@
   }
 
   // ===== イベント登録 =====
-  // フィルター（ジャンル）
+  // フィルター（ジャンル）複数選択対応
+  function updateFilterBtns() {
+    document.querySelectorAll('.filter-btn[data-genre]').forEach(function(b) {
+      var g = b.getAttribute('data-genre');
+      if (g === 'all') {
+        b.classList.toggle('active', currentFilter.size === 0);
+      } else {
+        b.classList.toggle('active', currentFilter.has(g));
+      }
+    });
+  }
+
   document.querySelectorAll('.filter-btn[data-genre]').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      document.querySelectorAll('.filter-btn[data-genre]').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      currentFilter = btn.getAttribute('data-genre');
+      var g = btn.getAttribute('data-genre');
+      if (g === 'all') {
+        // すべてを押したら全解除
+        currentFilter = new Set();
+      } else {
+        // 既に選択済みなら解除、なければ追加
+        if (currentFilter.has(g)) {
+          currentFilter.delete(g);
+        } else {
+          currentFilter.add(g);
+        }
+      }
+      updateFilterBtns();
       if (currentView === 'grid') renderGrid(); else renderTimeline();
     });
   });
