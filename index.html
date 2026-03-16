@@ -440,28 +440,43 @@
       <button class="modal-close" id="steam-modal-close">×</button>
     </div>
     <div class="modal-body">
-      <div class="form-row">
-        <label>Steam Web APIキー</label>
-        <input type="text" id="steam-api-key-input" placeholder="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
-        <div style="margin-top:5px;font-size:11px;color:var(--ink3);">
-          <a href="https://steamcommunity.com/dev/apikey" target="_blank" style="color:var(--accent2);">steamcommunity.com/dev/apikey</a> で無料取得できます。ドメインは何でもOK（例：localhost）
-        </div>
+      <div style="font-size:12px;color:var(--ink2);line-height:1.8;background:var(--surface2);border-radius:4px;padding:12px 14px;margin-bottom:4px;">
+        <b>手順：</b><br>
+        1. ブラウザで <a href="https://store.steampowered.com/replay" target="_blank" style="color:var(--accent2);">store.steampowered.com/replay</a> を開く<br>
+        2. Steamにログインしてプロフィールを開く<br>
+        3. そのページのURL末尾に <code style="background:var(--border);padding:1px 4px;border-radius:2px;">/ajaxgetuserstats</code> を追加してEnter<br>
+        　例: <code style="background:var(--border);padding:1px 4px;border-radius:2px;">…/76561199247544966/ajaxgetuserstats</code><br>
+        4. 表示されたJSONを全選択してコピーし、下に貼り付け
       </div>
       <div class="form-row">
-        <label>Steam ID（数字17桁）</label>
-        <input type="text" id="steam-id-input" placeholder="例：76561199247544966">
-        <div style="margin-top:5px;font-size:11px;color:var(--ink3);">
-          プロフィールURL の /profiles/ 以降の17桁の数字
-        </div>
+        <label>Steam APIレスポンス（JSONを貼り付け）</label>
+        <textarea id="steam-json-input" placeholder='{"response":{"games":[…]}}' style="min-height:100px;font-family:monospace;font-size:11px;"></textarea>
       </div>
-      <div id="steam-result" style="display:none;">
+      <div style="font-size:11px;color:var(--ink3);margin-top:4px;">
+        うまくいかない場合は <a href="https://steamcommunity.com/dev/apikey" target="_blank" style="color:var(--accent2);">APIキー取得ページ</a> からAPIキーを取得して下のフォームから試せます。
+      </div>
+      <details style="margin-top:12px;">
+        <summary style="font-size:11px;color:var(--ink3);cursor:pointer;">APIキー方式（上級者向け）</summary>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px;">
+          <div class="form-row">
+            <label>Steam Web APIキー</label>
+            <input type="text" id="steam-api-key-input" placeholder="32文字のキー">
+          </div>
+          <div class="form-row">
+            <label>Steam ID（17桁）</label>
+            <input type="text" id="steam-id-input" placeholder="76561199247544966">
+          </div>
+          <button type="button" class="btn-save" id="steam-fetch-btn" style="align-self:flex-end;">APIで取得する</button>
+        </div>
+      </details>
+      <div id="steam-result" style="display:none;margin-top:12px;">
         <div style="font-size:12px;color:var(--ink2);margin-bottom:8px;" id="steam-result-msg"></div>
-        <div id="steam-game-list" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+        <div id="steam-game-list" style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
       </div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn-cancel" id="steam-cancel-btn">キャンセル</button>
-      <button type="button" class="btn-save" id="steam-fetch-btn">取得する</button>
+      <button type="button" class="btn-save" id="steam-parse-btn">読み込む</button>
       <button type="button" class="btn-save" id="steam-import-confirm-btn" style="display:none">選択をインポート</button>
     </div>
   </div>
@@ -1290,9 +1305,8 @@
     el('steam-modal').classList.add('open');
     el('steam-result').style.display = 'none';
     el('steam-import-confirm-btn').style.display = 'none';
-    el('steam-fetch-btn').style.display = 'inline-block';
+    el('steam-json-input').value = '';
     steamGames = [];
-    // 保存済みAPIキー・IDを復元
     var savedKey = localStorage.getItem('steam-api-key');
     var savedId  = localStorage.getItem('steam-id');
     if (savedKey) el('steam-api-key-input').value = savedKey;
@@ -1300,6 +1314,53 @@
   });
   el('steam-modal-close').addEventListener('click', function() { el('steam-modal').classList.remove('open'); });
   el('steam-cancel-btn').addEventListener('click', function() { el('steam-modal').classList.remove('open'); });
+
+  // JSON貼り付けから読み込む
+  el('steam-parse-btn').addEventListener('click', function() {
+    var raw = el('steam-json-input').value.trim();
+    if (!raw) { showToast('JSONを貼り付けてください', 'error'); return; }
+    try {
+      var json = JSON.parse(raw);
+      // IPlayerService/GetOwnedGames 形式
+      var games = null;
+      if (json.response && json.response.games) {
+        games = json.response.games.map(function(g) {
+          return {
+            appid: String(g.appid),
+            name: g.name || 'Unknown',
+            hours: g.playtime_forever ? (g.playtime_forever / 60).toFixed(1) : '0'
+          };
+        });
+      }
+      // Steam Replayページのajax形式
+      else if (json.games) {
+        games = json.games.map(function(g) {
+          return {
+            appid: String(g.appid || g.app_id || ''),
+            name: g.name || g.game_name || 'Unknown',
+            hours: g.playtime_forever ? (g.playtime_forever / 60).toFixed(1) : (g.hours || '0')
+          };
+        });
+      }
+      // 配列そのまま
+      else if (Array.isArray(json)) {
+        games = json.map(function(g) {
+          return {
+            appid: String(g.appid || g.app_id || ''),
+            name: g.name || g.game_name || 'Unknown',
+            hours: g.playtime_forever ? (g.playtime_forever / 60).toFixed(1) : (g.hours || '0')
+          };
+        });
+      }
+      if (!games || !games.length) { showToast('ゲームデータが見つかりません', 'error'); return; }
+      steamGames = games.filter(function(g) { return g.name && g.name !== 'Unknown'; })
+        .sort(function(a,b) { return parseFloat(b.hours) - parseFloat(a.hours); });
+      renderSteamList();
+      showToast(steamGames.length + ' 件のゲームを読み込みました', 'success');
+    } catch(e) {
+      showToast('JSONの解析に失敗しました: ' + e.message, 'error');
+    }
+  });
 
   el('steam-fetch-btn').addEventListener('click', function() {
     var apiKey = el('steam-api-key-input').value.trim();
