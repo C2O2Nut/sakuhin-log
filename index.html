@@ -269,10 +269,14 @@
   <button class="dmenu-btn" id="drive-load-btn" style="display:none">Driveから読み込む</button>
   <button class="dmenu-btn" id="drive-logout-btn" style="display:none;color:#c94a2a;">ログアウト</button>
   <div id="drive-status" style="padding:6px 14px 8px;font-size:11px;color:var(--ink3);display:none;"></div>
+  <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">インポート</div>
+  <button class="dmenu-btn" id="bookmory-import-btn">bookmoryからインポート (.bookmory)</button>
+  <button class="dmenu-btn" id="steam-import-btn">Steamからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">手動バックアップ</div>
   <button class="dmenu-btn" id="export-btn">JSONでエクスポート</button>
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <input type="file" id="import-file" accept=".json" style="display:none;">
+  <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
 
 <div class="toolbar">
@@ -301,6 +305,36 @@
 <div id="timeline-view">
   <button class="dl-btn" id="dl-btn">年表をHTMLでダウンロード</button>
   <div id="timeline-content"></div>
+</div>
+
+<!-- Steamインポートモーダル -->
+<div class="modal-overlay" id="steam-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Steamからインポート</h2>
+      <button class="modal-close" id="steam-modal-close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>Steam ID（数字17桁）またはカスタムURL名</label>
+        <input type="text" id="steam-id-input" placeholder="例：76561198xxxxxxxxx または yourname">
+        <div style="margin-top:6px;font-size:11px;color:var(--ink3);">
+          Steam プロフィールURL の末尾の数字かカスタム名を入力してください。<br>
+          例: steamcommunity.com/id/<b>yourname</b> または /profiles/<b>76561198...</b><br>
+          ※プロフィールを「公開」に設定している必要があります。
+        </div>
+      </div>
+      <div id="steam-result" style="display:none;">
+        <div style="font-size:12px;color:var(--ink2);margin-bottom:8px;" id="steam-result-msg"></div>
+        <div id="steam-game-list" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" id="steam-cancel-btn">キャンセル</button>
+      <button type="button" class="btn-save" id="steam-fetch-btn">取得する</button>
+      <button type="button" class="btn-save" id="steam-import-confirm-btn" style="display:none">選択をインポート</button>
+    </div>
+  </div>
 </div>
 
 <!-- モーダル -->
@@ -858,7 +892,280 @@
 
   // Driveガイド（削除済み）
 
-  // ===== Google Drive 連携 =====
+  // ===== bookmoryインポート =====
+  el('bookmory-import-btn').addEventListener('click', function() {
+    el('data-menu').style.display = 'none';
+    el('bookmory-file').click();
+  });
+
+  el('bookmory-file').addEventListener('change', function() {
+    var file = this.files[0]; if (!file) return;
+    this.value = '';
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      importBookmory(e.target.result);
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  function importBookmory(arrayBuffer) {
+    // JSZipでZIPを解凍
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    script.onload = function() {
+      JSZip.loadAsync(arrayBuffer).then(function(zip) {
+        var dbFile = zip.file('new_bookmory.db');
+        if (!dbFile) dbFile = zip.file('bookmory.db');
+        if (!dbFile) { alert('DBファイルが見つかりません'); return; }
+        return dbFile.async('arraybuffer');
+      }).then(function(dbBuf) {
+        // sql.jsでSQLite読み込み
+        var s2 = document.createElement('script');
+        s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js';
+        s2.onload = function() {
+          initSqlJs({ locateFile: function(f) { return 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/' + f; } }).then(function(SQL) {
+            var db = new SQL.Database(new Uint8Array(dbBuf));
+
+            // books取得
+            var books = {};
+            var bRes = db.exec("SELECT key, value FROM entry WHERE store='books'");
+            if (bRes.length && bRes[0].values) {
+              bRes[0].values.forEach(function(row) {
+                var key = row[0]; var val = row[1];
+                if (typeof key !== 'string') key = new TextDecoder().decode(key);
+                try { books[key] = JSON.parse(val); } catch(e) {}
+              });
+            }
+
+            // notes取得（bid→メモ一覧）
+            var notesByBid = {};
+            var nRes = db.exec("SELECT key, value FROM entry WHERE store='notes'");
+            if (nRes.length && nRes[0].values) {
+              nRes[0].values.forEach(function(row) {
+                try {
+                  var n = JSON.parse(row[1]);
+                  var bid = String(n.bid);
+                  if (!notesByBid[bid]) notesByBid[bid] = [];
+                  // quillのdeltaからテキストを抽出
+                  var text = '';
+                  try {
+                    var ops = JSON.parse(n.book_content || n.content_quill || '[]');
+                    ops.forEach(function(op) { if (op.insert && typeof op.insert === 'string') text += op.insert; });
+                  } catch(e) { text = ''; }
+                  if (text.trim()) notesByBid[bid].push(text.trim());
+                } catch(e) {}
+              });
+            }
+
+            db.close();
+
+            // 作品ログ形式に変換
+            var statusMap = { 'DONE':'完了', 'READING':'進行中', 'NOT_STARTED':'未着手', 'PAUSE':'進行中', 'GIVE_UP':'進行中' };
+            var starMap = function(s) { if (!s) return 0; if (s <= 1.5) return 1; if (s <= 3) return 2; return 3; };
+
+            var newItems = [];
+            Object.keys(books).forEach(function(key) {
+              var b = books[key];
+              // 既存チェック（タイトルで重複回避）
+              var exists = items.some(function(x) { return x.name === b.title; });
+              if (exists) return;
+
+              var dates = [];
+              if (b.reads && b.reads.length) {
+                b.reads.forEach(function(r) {
+                  dates.push({
+                    start: r.start ? new Date(r.start).toISOString().slice(0,10) : '',
+                    end:   r.end   ? new Date(r.end).toISOString().slice(0,10)   : ''
+                  });
+                });
+              }
+
+              var lastRead = b.reads && b.reads.length ? b.reads[b.reads.length-1] : null;
+              var star = lastRead ? starMap(lastRead.star) : 0;
+              var status = b.status_list && b.status_list.length ? (statusMap[b.status_list[b.status_list.length-1]] || '完了') : '未着手';
+              var memo = (notesByBid[key] || []).join('\n\n');
+
+              newItems.push({
+                id: Date.now() + Math.random(),
+                name: b.title || '',
+                genre: '小説',
+                type: b.book_type === 'comic' ? 'マンガ' : '',
+                stars: star,
+                tags: [],
+                dates: dates,
+                status: status,
+                memo: memo,
+                photo: b.image || null,
+                memoPhoto: null,
+                updatedAt: b.updated_at || Date.now()
+              });
+            });
+
+            if (newItems.length === 0) { alert('インポートできる新しい本が見つかりませんでした（重複除外済み）'); return; }
+            if (!confirm(newItems.length + ' 冊をインポートします。続けますか？')) return;
+            newItems.forEach(function(x) { items.unshift(x); });
+            saveData();
+            if (currentView === 'grid') renderGrid(); else renderTimeline();
+            alert(newItems.length + ' 冊をインポートしました！');
+          });
+        };
+        document.head.appendChild(s2);
+      }).catch(function(e) { alert('読み込み失敗: ' + e.message); });
+    };
+    document.head.appendChild(script);
+  }
+
+  // ===== Steamインポート =====
+  var steamGames = [];
+
+  el('steam-import-btn').addEventListener('click', function() {
+    el('data-menu').style.display = 'none';
+    el('steam-modal').classList.add('open');
+    el('steam-result').style.display = 'none';
+    el('steam-import-confirm-btn').style.display = 'none';
+    el('steam-fetch-btn').style.display = 'inline-block';
+    el('steam-id-input').value = '';
+    steamGames = [];
+  });
+  el('steam-modal-close').addEventListener('click', function() { el('steam-modal').classList.remove('open'); });
+  el('steam-cancel-btn').addEventListener('click', function() { el('steam-modal').classList.remove('open'); });
+
+  el('steam-fetch-btn').addEventListener('click', function() {
+    var rawId = el('steam-id-input').value.trim();
+    if (!rawId) { alert('Steam IDを入力してください'); return; }
+    el('steam-fetch-btn').textContent = '取得中…';
+    el('steam-fetch-btn').disabled = true;
+
+    // SteamIDの解決（数字17桁 or カスタムURL）
+    // CORS回避のためAllOriginsプロキシを使用
+    var isNumeric = /^\d{17}$/.test(rawId);
+    var steamId64 = isNumeric ? rawId : null;
+
+    function fetchGames(sid) {
+      // Steam Web API（公開ライブラリ）
+      var url = 'https://api.allorigins.win/get?url=' + encodeURIComponent(
+        'https://steamcommunity.com/profiles/' + sid + '/games/?tab=all&xml=1'
+      );
+      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        var parser = new DOMParser();
+        var xml = parser.parseFromString(data.contents, 'text/xml');
+        var gameNodes = xml.querySelectorAll('game');
+        if (!gameNodes.length) {
+          el('steam-fetch-btn').textContent = '取得する';
+          el('steam-fetch-btn').disabled = false;
+          el('steam-result').style.display = 'block';
+          el('steam-result-msg').textContent = 'ゲームが取得できませんでした。プロフィールとゲームライブラリを「公開」にしてください。';
+          return;
+        }
+        steamGames = [];
+        gameNodes.forEach(function(g) {
+          var appid = g.querySelector('appID') ? g.querySelector('appID').textContent : '';
+          var name  = g.querySelector('name')  ? g.querySelector('name').textContent  : '';
+          var hours = g.querySelector('hoursOnRecord') ? g.querySelector('hoursOnRecord').textContent : '0';
+          if (appid && name) {
+            steamGames.push({ appid: appid, name: name, hours: hours });
+          }
+        });
+        renderSteamList();
+        el('steam-fetch-btn').textContent = '取得する';
+        el('steam-fetch-btn').disabled = false;
+      }).catch(function(e) {
+        el('steam-fetch-btn').textContent = '取得する';
+        el('steam-fetch-btn').disabled = false;
+        el('steam-result').style.display = 'block';
+        el('steam-result-msg').textContent = '取得失敗: ' + e.message;
+      });
+    }
+
+    if (steamId64) {
+      fetchGames(steamId64);
+    } else {
+      // カスタムURLからSteamID64を解決
+      var resolveUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(
+        'https://steamcommunity.com/id/' + rawId + '/games/?tab=all&xml=1'
+      );
+      fetch(resolveUrl).then(function(r) { return r.json(); }).then(function(data) {
+        var parser = new DOMParser();
+        var xml = parser.parseFromString(data.contents, 'text/xml');
+        var sid = xml.querySelector('steamID64');
+        if (sid) {
+          fetchGames(sid.textContent);
+        } else {
+          el('steam-fetch-btn').textContent = '取得する';
+          el('steam-fetch-btn').disabled = false;
+          el('steam-result').style.display = 'block';
+          el('steam-result-msg').textContent = 'Steam IDが見つかりませんでした。IDを確認してください。';
+        }
+      }).catch(function(e) {
+        el('steam-fetch-btn').textContent = '取得する';
+        el('steam-fetch-btn').disabled = false;
+        el('steam-result').style.display = 'block';
+        el('steam-result-msg').textContent = '取得失敗: ' + e.message;
+      });
+    }
+  });
+
+  function renderSteamList() {
+    var list = el('steam-game-list');
+    el('steam-result').style.display = 'block';
+    el('steam-result-msg').textContent = steamGames.length + ' 本のゲームが見つかりました。インポートするものを選んでください。';
+    el('steam-import-confirm-btn').style.display = 'inline-block';
+    el('steam-fetch-btn').style.display = 'none';
+    list.innerHTML = '';
+
+    // 既存タイトル
+    var existingNames = new Set(items.map(function(x) { return x.name; }));
+
+    steamGames.forEach(function(g, idx) {
+      var already = existingNames.has(g.name);
+      var row = document.createElement('label');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = !already; cb.setAttribute('data-idx', idx);
+      cb.style.cssText = 'flex-shrink:0;';
+      var img = document.createElement('img');
+      img.src = 'https://media.steampowered.com/steamcommunity/public/images/apps/' + g.appid + '/' + g.appid + '_header.jpg';
+      img.style.cssText = 'width:60px;height:28px;object-fit:cover;border-radius:2px;flex-shrink:0;';
+      img.onerror = function() { this.style.display='none'; };
+      var info = document.createElement('span');
+      info.style.cssText = 'flex:1;';
+      info.innerHTML = g.name + '<span style="color:var(--ink3);font-size:11px;margin-left:6px;">' + g.hours + 'h' + (already ? ' (登録済み)' : '') + '</span>';
+      row.appendChild(cb); row.appendChild(img); row.appendChild(info);
+      list.appendChild(row);
+    });
+  }
+
+  el('steam-import-confirm-btn').addEventListener('click', function() {
+    var checkboxes = el('steam-game-list').querySelectorAll('input[type=checkbox]:checked');
+    var newItems = [];
+    checkboxes.forEach(function(cb) {
+      var idx = parseInt(cb.getAttribute('data-idx'));
+      var g = steamGames[idx];
+      var exists = items.some(function(x) { return x.name === g.name; });
+      if (exists) return;
+      newItems.push({
+        id: Date.now() + Math.random(),
+        name: g.name,
+        genre: 'ゲーム',
+        type: '',
+        stars: 0,
+        tags: [],
+        dates: [],
+        status: parseFloat(g.hours) > 0 ? '完了' : '未着手',
+        memo: g.hours + ' 時間プレイ',
+        photo: null,
+        memoPhoto: null,
+        updatedAt: Date.now()
+      });
+    });
+    if (!newItems.length) { alert('選択されたゲームがありません'); return; }
+    if (!confirm(newItems.length + ' 本のゲームをインポートします。続けますか？')) return;
+    newItems.forEach(function(x) { items.unshift(x); });
+    saveData();
+    el('steam-modal').classList.remove('open');
+    if (currentView === 'grid') renderGrid(); else renderTimeline();
+    alert(newItems.length + ' 件をインポートしました！');
+  });
   var CLIENT_ID = '586982625413-hto13tgg5sasgh4cdmvh8jibb7kbs2va.apps.googleusercontent.com';
   var SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
   var DRIVE_FILE_NAME = 'sakuhin-log-data.json';
