@@ -91,6 +91,8 @@
   .badge-小説   { background: #5a7a3a; }
   .badge-マンガ { background: #8c5a2a; }
   .badge-アニメ { background: #6a2a8c; }
+  .badge-音楽   { background: #1a7a6a; }
+  .badge-心情   { background: #8c3a6a; }
   .badge-その他 { background: #555; }
   .status-dot {
     position: absolute; top: 8px; right: 8px; width: 9px; height: 9px; border-radius: 50%;
@@ -185,6 +187,17 @@
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   }
   .tl-card-stars { padding: 0 6px 5px; font-size: 10px; color: #d4920a; }
+
+  /* 期間線 */
+  .tl-period-line {
+    width: 4px; border-radius: 2px; flex-shrink: 0;
+    margin-left: 4px; min-height: 20px;
+  }
+  .tl-period-dot-line {
+    width: 4px; flex-shrink: 0; margin-left: 4px;
+    background-image: repeating-linear-gradient(to bottom, currentColor 0, currentColor 4px, transparent 4px, transparent 8px);
+    min-height: 20px;
+  }
   .dl-btn {
     padding: 7px 16px; background: var(--ink2); color: #fff; border: none;
     border-radius: 4px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px;
@@ -316,7 +329,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.0.0</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.1.0</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -342,6 +355,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.1.0</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -353,6 +367,8 @@
   <button class="filter-btn" data-genre="小説">小説</button>
   <button class="filter-btn" data-genre="マンガ">マンガ</button>
   <button class="filter-btn" data-genre="アニメ">アニメ</button>
+  <button class="filter-btn" data-genre="音楽">音楽</button>
+  <button class="filter-btn" data-genre="心情">心情</button>
   <div style="position:relative;">
     <button class="filter-btn" id="tag-filter-btn">タグ</button>
     <div id="tag-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px var(--shadow);z-index:200;min-width:200px;max-width:280px;padding:10px 12px;">
@@ -362,6 +378,11 @@
     </div>
   </div>
   <div class="toolbar-right">
+    <select id="sort-select" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:12px;background:var(--bg);color:var(--ink2);cursor:pointer;">
+      <option value="default">登録順</option>
+      <option value="name">名前順</option>
+      <option value="lastdate">最終日順</option>
+    </select>
     <button class="layout-btn active" id="layout-normal-btn" title="通常表示">▦</button>
     <button class="layout-btn" id="layout-compact-btn" title="コンパクト表示">⊞</button>
     <button class="view-btn active" id="view-grid-btn">カード</button>
@@ -380,7 +401,18 @@
 </div>
 
 <div id="timeline-view">
-  <button class="dl-btn" id="dl-btn">年表をHTMLでダウンロード</button>
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 24px 0;flex-wrap:wrap;">
+    <button class="view-btn active" id="tl-mode-normal-btn">通常</button>
+    <button class="view-btn" id="tl-mode-select-btn">作品を選んで表示</button>
+    <button class="dl-btn" id="dl-btn" style="margin:0 0 0 auto;">年表をHTMLでダウンロード</button>
+  </div>
+  <!-- 特定作品選択パネル -->
+  <div id="tl-select-panel" style="display:none;padding:10px 24px 0;">
+    <div style="font-size:11px;color:var(--ink3);margin-bottom:8px;">表示する作品を選択（絞り込みも有効）</div>
+    <div id="tl-select-list" style="display:flex;flex-wrap:wrap;gap:6px;max-height:140px;overflow-y:auto;"></div>
+    <button type="button" id="tl-select-all-btn" style="margin-top:8px;font-size:11px;background:none;border:none;color:var(--accent2);cursor:pointer;">全選択</button>
+    <button type="button" id="tl-select-none-btn" style="margin-top:8px;margin-left:12px;font-size:11px;background:none;border:none;color:var(--ink3);cursor:pointer;">全解除</button>
+  </div>
   <div id="timeline-content"></div>
 </div>
 
@@ -504,12 +536,21 @@
             <option value="小説">小説</option>
             <option value="マンガ">マンガ</option>
             <option value="アニメ">アニメ</option>
+            <option value="音楽">音楽</option>
+            <option value="心情">心情</option>
             <option value="その他">その他</option>
           </select>
         </div>
         <div class="form-row">
           <label>種類・カテゴリ</label>
           <input type="text" id="f-type" placeholder="例：RPG、ホラー">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>テーマカラー（年表の線の色）</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="color" id="f-color" value="#2a6e8c" style="height:32px;width:48px;padding:2px;border:1.5px solid var(--border);border-radius:4px;cursor:pointer;">
+          <span style="font-size:12px;color:var(--ink3);">年表に色付き線で表示されます</span>
         </div>
       </div>
       <div class="form-row">
@@ -580,7 +621,10 @@
   var currentFilter = 'all';
   var currentTagFilter = null;
   var currentView = 'grid';
-  var currentLayout = localStorage.getItem('sakuhin-layout') || 'normal'; // 'normal' or 'compact'
+  var currentLayout = localStorage.getItem('sakuhin-layout') || 'normal';
+  var currentSort = 'default'; // 'default' | 'name' | 'lastdate'
+  var tlMode = 'normal'; // 'normal' | 'select'
+  var tlSelectedIds = {}; // id -> true
   var editingId = null;
   var currentStar = 0;
   var photoData = null;
@@ -612,7 +656,14 @@
   }
 
   function genreIcon(g) {
-    return '';
+    var map = { 'ゲーム':'G','映画':'M','小説':'B','マンガ':'C','アニメ':'A','音楽':'♪','心情':'◉','その他':'?' };
+    return map[g] || '?';
+  }
+
+  // ジャンルごとのデフォルト色
+  function genreDefaultColor(g) {
+    var map = { 'ゲーム':'#2a6e8c','映画':'#c94a2a','小説':'#5a7a3a','マンガ':'#8c5a2a','アニメ':'#6a2a8c','音楽':'#1a7a6a','心情':'#8c3a6a','その他':'#555' };
+    return map[g] || '#888';
   }
 
   function getFirstDate(item) {
@@ -699,6 +750,7 @@
       el('f-genre').value = item.genre || 'ゲーム';
       el('f-type').value = item.type || '';
       el('f-tags').value = (item.tags || []).join(' ');
+      el('f-color').value = item.color || genreDefaultColor(item.genre || 'ゲーム');
       renderDateList(getItemDates(item));
       el('f-status').value = item.status || '完了';
       el('f-memo').value = item.memo || '';
@@ -718,6 +770,7 @@
     } else {
       el('modal-title').textContent = '新しい作品を追加';
       el('f-name').value = ''; el('f-genre').value = 'ゲーム'; el('f-type').value = '';
+      el('f-color').value = genreDefaultColor('ゲーム');
       el('f-tags').value = ''; renderDateList([]); el('f-status').value = '完了';
       el('f-memo').value = ''; el('btn-delete').style.display = 'none';
     }
@@ -739,13 +792,16 @@
       name: name,
       genre: el('f-genre').value,
       type: el('f-type').value.trim(),
+      color: el('f-color').value,
       stars: currentStar,
       tags: el('f-tags').value.trim().split(/\s+/).filter(Boolean),
       dates: getDates(),
       status: el('f-status').value,
       memo: el('f-memo').value.trim(),
+      color: el('f-color').value,
       photo: photoData,
       memoPhoto: memoPhotoData,
+      color: el('f-color').value || null,
       updatedAt: Date.now()
     };
 
@@ -768,16 +824,51 @@
   }
 
   // ===== カードビュー =====
+  function getLastDate(item) {
+    var dates = getItemDates(item);
+    var last = '';
+    dates.forEach(function(d) { if (d.end && d.end > last) last = d.end; if (d.start && d.start > last) last = d.start; });
+    return last;
+  }
+
   function getFiltered() {
-    var result = currentFilter === 'all' ? items : items.filter(function(x) { return x.genre === currentFilter; });
+    var result = currentFilter === 'all' ? items.slice() : items.filter(function(x) { return x.genre === currentFilter; });
     if (currentTagFilter) {
       result = result.filter(function(x) { return (x.tags||[]).indexOf(currentTagFilter) !== -1; });
+    }
+    if (currentSort === 'name') {
+      result.sort(function(a,b) { return a.name.localeCompare(b.name, 'ja'); });
+    } else if (currentSort === 'lastdate') {
+      result.sort(function(a,b) { return getLastDate(b) > getLastDate(a) ? 1 : -1; });
     }
     return result;
   }
 
+  function getLastDate(item) {
+    var dates = getItemDates(item);
+    var last = '';
+    dates.forEach(function(d) {
+      if (d.end && d.end > last) last = d.end;
+      if (d.start && d.start > last) last = d.start;
+    });
+    return last;
+  }
+
+  function getSorted(arr) {
+    var copy = arr.slice();
+    if (currentSort === 'name') {
+      copy.sort(function(a,b) { return a.name.localeCompare(b.name, 'ja'); });
+    } else if (currentSort === 'lastdate') {
+      copy.sort(function(a,b) {
+        var da = getLastDate(a), db = getLastDate(b);
+        return da < db ? 1 : da > db ? -1 : 0;
+      });
+    }
+    return copy;
+  }
+
   function renderGrid() {
-    var filtered = getFiltered();
+    var filtered = getSorted(getFiltered());
     el('header-count').textContent = items.length + ' 件';
     var filterLabel = currentTagFilter ? (currentFilter === 'all' ? '' : currentFilter + ' / ') + '#' + currentTagFilter : currentFilter === 'all' ? '' : currentFilter;
     el('count-bar').textContent = filtered.length + ' 件' + (filterLabel ? '（' + filterLabel + '）' : '（全件）');
@@ -832,6 +923,10 @@
     el('header-count').textContent = items.length + ' 件';
 
     var dated = getFiltered().filter(function(x) { return getFirstDate(x); });
+    // 特定作品選択モードの場合はさらに絞り込み
+    if (tlMode === 'select' && Object.keys(tlSelectedIds).length > 0) {
+      dated = dated.filter(function(x) { return !!tlSelectedIds[x.id]; });
+    }
     // 新しい順（降順）
     dated.sort(function(a, b) { return getFirstDate(a) > getFirstDate(b) ? -1 : 1; });
 
@@ -898,6 +993,13 @@
         cardsWrap.className = 'tl-cards';
 
         grouped[year][month].forEach(function(item) {
+          var itemColor = item.color || genreDefaultColor(item.genre);
+          var dates = getItemDates(item);
+
+          // カードラッパー（カード＋期間線を縦に並べる）
+          var cardWrap = document.createElement('div');
+          cardWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex-shrink:0;';
+
           var card = document.createElement('div');
           card.className = 'tl-card';
           var typeStr = item.type ? ' / ' + item.type : '';
@@ -912,7 +1014,34 @@
           card.addEventListener('click', (function(id) {
             return function() { openModal(id); };
           })(item.id));
-          cardsWrap.appendChild(card);
+          cardWrap.appendChild(card);
+
+          // 期間線を描画
+          dates.forEach(function(d, di) {
+            if (!d.start && !d.end) return;
+            var hasBoth = d.start && d.end;
+            var hasOnlyEnd = !d.start && d.end;
+
+            if (hasBoth) {
+              // 開始〜終了：実線
+              var line = document.createElement('div');
+              line.className = 'tl-period-line';
+              line.style.cssText = 'background:' + itemColor + ';height:28px;';
+              cardWrap.appendChild(line);
+            } else if (hasOnlyEnd) {
+              // 終了のみ：短い実線＋点線
+              var lineS = document.createElement('div');
+              lineS.className = 'tl-period-line';
+              lineS.style.cssText = 'background:' + itemColor + ';height:14px;';
+              cardWrap.appendChild(lineS);
+              var lineDot = document.createElement('div');
+              lineDot.className = 'tl-period-dot-line';
+              lineDot.style.cssText = 'color:' + itemColor + ';height:20px;';
+              cardWrap.appendChild(lineDot);
+            }
+          });
+
+          cardsWrap.appendChild(cardWrap);
         });
 
         row.appendChild(mlabel); row.appendChild(line); row.appendChild(cardsWrap);
@@ -1079,6 +1208,62 @@
     el('grid-view').style.display = 'none'; el('timeline-view').style.display = 'block';
     renderTimeline();
   });
+
+  // 並び替え
+  el('sort-select').addEventListener('change', function() {
+    currentSort = this.value;
+    if (currentView === 'grid') renderGrid();
+  });
+
+  // ジャンル変更時にデフォルト色を自動セット
+  el('f-genre').addEventListener('change', function() {
+    el('f-color').value = genreDefaultColor(this.value);
+  });
+
+  // 年表モード切替
+  el('tl-mode-normal-btn').addEventListener('click', function() {
+    tlMode = 'normal';
+    el('tl-mode-normal-btn').classList.add('active');
+    el('tl-mode-select-btn').classList.remove('active');
+    el('tl-select-panel').style.display = 'none';
+    renderTimeline();
+  });
+  el('tl-mode-select-btn').addEventListener('click', function() {
+    tlMode = 'select';
+    el('tl-mode-select-btn').classList.add('active');
+    el('tl-mode-normal-btn').classList.remove('active');
+    el('tl-select-panel').style.display = 'block';
+    renderTlSelectList();
+    renderTimeline();
+  });
+  el('tl-select-all-btn').addEventListener('click', function() {
+    getFiltered().forEach(function(x) { tlSelectedIds[x.id] = true; });
+    renderTlSelectList(); renderTimeline();
+  });
+  el('tl-select-none-btn').addEventListener('click', function() {
+    tlSelectedIds = {};
+    renderTlSelectList(); renderTimeline();
+  });
+
+  function renderTlSelectList() {
+    var list = el('tl-select-list');
+    list.innerHTML = '';
+    getFiltered().forEach(function(item) {
+      var isSelected = !!tlSelectedIds[item.id];
+      var color = item.color || genreDefaultColor(item.genre);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.style.cssText = 'padding:3px 10px;border-radius:12px;border:2px solid ' + color + ';background:' + (isSelected ? color : 'transparent') + ';color:' + (isSelected ? '#fff' : 'var(--ink2)') + ';font-size:11px;cursor:pointer;font-family:inherit;transition:all 0.12s;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      btn.textContent = item.name;
+      btn.title = item.name;
+      btn.addEventListener('click', function() {
+        if (tlSelectedIds[item.id]) { delete tlSelectedIds[item.id]; }
+        else { tlSelectedIds[item.id] = true; }
+        renderTlSelectList(); renderTimeline();
+      });
+      list.appendChild(btn);
+    });
+  }
 
   el('add-btn').addEventListener('click', function() { openModal(null); });
   el('modal-close-btn').addEventListener('click', closeModal);
