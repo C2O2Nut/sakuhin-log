@@ -275,6 +275,8 @@
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">手動バックアップ</div>
   <button class="dmenu-btn" id="export-btn">JSONでエクスポート</button>
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
+  <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
+  <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -305,6 +307,55 @@
 <div id="timeline-view">
   <button class="dl-btn" id="dl-btn">年表をHTMLでダウンロード</button>
   <div id="timeline-content"></div>
+</div>
+
+<!-- テーマモーダル -->
+<div class="modal-overlay" id="theme-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>テーマ・色のカスタマイズ</h2>
+      <button class="modal-close" id="theme-modal-close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>プリセット</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;" id="theme-presets"></div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
+        <div class="form-two">
+          <div class="form-row">
+            <label>背景色</label>
+            <input type="color" id="tc-bg" style="height:36px;padding:2px;">
+          </div>
+          <div class="form-row">
+            <label>カード色</label>
+            <input type="color" id="tc-surface" style="height:36px;padding:2px;">
+          </div>
+          <div class="form-row">
+            <label>文字色</label>
+            <input type="color" id="tc-ink" style="height:36px;padding:2px;">
+          </div>
+          <div class="form-row">
+            <label>アクセント色</label>
+            <input type="color" id="tc-accent" style="height:36px;padding:2px;">
+          </div>
+          <div class="form-row">
+            <label>ヘッダー色</label>
+            <input type="color" id="tc-header" style="height:36px;padding:2px;">
+          </div>
+          <div class="form-row">
+            <label>ボーダー色</label>
+            <input type="color" id="tc-border" style="height:36px;padding:2px;">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" id="theme-reset-btn" style="margin-right:auto;">リセット</button>
+      <button type="button" class="btn-cancel" id="theme-cancel-btn">キャンセル</button>
+      <button type="button" class="btn-save" id="theme-save-btn">適用</button>
+    </div>
+  </div>
 </div>
 
 <!-- Steamインポートモーダル -->
@@ -872,16 +923,11 @@
       try {
         var imported = JSON.parse(e.target.result);
         if (!Array.isArray(imported)) throw new Error('invalid');
-        if (!confirm('インポートすると現在のデータに追加されます（上書きではありません）。続けますか？')) return;
-        // IDの重複を避けて追加
-        var existingIds = new Set(items.map(function(x) { return x.id; }));
-        var added = 0;
-        imported.forEach(function(item) {
-          if (!existingIds.has(item.id)) { items.unshift(item); added++; }
-        });
+        if (!confirm(imported.length + ' 件のデータで上書きします。現在のデータは消えます。続けますか？')) return;
+        items = imported;
         saveData();
         if (currentView === 'grid') renderGrid(); else renderTimeline();
-        alert(added + ' 件をインポートしました。');
+        alert(imported.length + ' 件をインポートしました。');
       } catch(err) {
         alert('インポートに失敗しました。正しいJSONファイルか確認してください。');
       }
@@ -1001,9 +1047,9 @@
               });
             });
 
-            if (newItems.length === 0) { alert('インポートできる新しい本が見つかりませんでした（重複除外済み）'); return; }
-            if (!confirm(newItems.length + ' 冊をインポートします。続けますか？')) return;
-            newItems.forEach(function(x) { items.unshift(x); });
+            if (newItems.length === 0) { alert('インポートできる本が見つかりませんでした'); return; }
+            if (!confirm(newItems.length + ' 冊で上書きします。現在のデータは消えます。続けますか？')) return;
+            items = newItems;
             saveData();
             if (currentView === 'grid') renderGrid(); else renderTimeline();
             alert(newItems.length + ' 冊をインポートしました！');
@@ -1042,66 +1088,70 @@
     var steamId64 = isNumeric ? rawId : null;
 
     function fetchGames(sid) {
-      // Steam Web API（公開ライブラリ）
-      var url = 'https://api.allorigins.win/get?url=' + encodeURIComponent(
-        'https://steamcommunity.com/profiles/' + sid + '/games/?tab=all&xml=1'
-      );
-      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
-        var parser = new DOMParser();
-        var xml = parser.parseFromString(data.contents, 'text/xml');
-        var gameNodes = xml.querySelectorAll('game');
-        if (!gameNodes.length) {
+      // 複数プロキシをフォールバックで試みる
+      var proxies = [
+        'https://corsproxy.io/?',
+        'https://api.codetabs.com/v1/proxy?quest='
+      ];
+      var targetUrl = 'https://steamcommunity.com/profiles/' + sid + '/games/?tab=all&xml=1';
+
+      function tryProxy(idx) {
+        if (idx >= proxies.length) {
           el('steam-fetch-btn').textContent = '取得する';
           el('steam-fetch-btn').disabled = false;
           el('steam-result').style.display = 'block';
-          el('steam-result-msg').textContent = 'ゲームが取得できませんでした。プロフィールとゲームライブラリを「公開」にしてください。';
+          el('steam-result-msg').innerHTML = '取得失敗。Steamの設定でゲームライブラリとプロフィールを<b>公開</b>にしてから再試行してください。';
           return;
         }
-        steamGames = [];
-        gameNodes.forEach(function(g) {
-          var appid = g.querySelector('appID') ? g.querySelector('appID').textContent : '';
-          var name  = g.querySelector('name')  ? g.querySelector('name').textContent  : '';
-          var hours = g.querySelector('hoursOnRecord') ? g.querySelector('hoursOnRecord').textContent : '0';
-          if (appid && name) {
-            steamGames.push({ appid: appid, name: name, hours: hours });
-          }
-        });
-        renderSteamList();
-        el('steam-fetch-btn').textContent = '取得する';
-        el('steam-fetch-btn').disabled = false;
-      }).catch(function(e) {
-        el('steam-fetch-btn').textContent = '取得する';
-        el('steam-fetch-btn').disabled = false;
-        el('steam-result').style.display = 'block';
-        el('steam-result-msg').textContent = '取得失敗: ' + e.message;
-      });
+        fetch(proxies[idx] + encodeURIComponent(targetUrl))
+          .then(function(r) { return r.text(); })
+          .then(function(text) {
+            var parser = new DOMParser();
+            var xml = parser.parseFromString(text, 'text/xml');
+            var gameNodes = xml.querySelectorAll('game');
+            if (!gameNodes.length) { tryProxy(idx + 1); return; }
+            steamGames = [];
+            gameNodes.forEach(function(g) {
+              var appid = g.querySelector('appID') ? g.querySelector('appID').textContent : '';
+              var name  = g.querySelector('name')  ? g.querySelector('name').textContent  : '';
+              var hours = g.querySelector('hoursOnRecord') ? g.querySelector('hoursOnRecord').textContent : '0';
+              if (appid && name) steamGames.push({ appid: appid, name: name, hours: hours });
+            });
+            renderSteamList();
+            el('steam-fetch-btn').textContent = '取得する';
+            el('steam-fetch-btn').disabled = false;
+          }).catch(function() { tryProxy(idx + 1); });
+      }
+      tryProxy(0);
     }
 
     if (steamId64) {
       fetchGames(steamId64);
     } else {
-      // カスタムURLからSteamID64を解決
-      var resolveUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(
-        'https://steamcommunity.com/id/' + rawId + '/games/?tab=all&xml=1'
-      );
-      fetch(resolveUrl).then(function(r) { return r.json(); }).then(function(data) {
-        var parser = new DOMParser();
-        var xml = parser.parseFromString(data.contents, 'text/xml');
-        var sid = xml.querySelector('steamID64');
-        if (sid) {
-          fetchGames(sid.textContent);
-        } else {
+      var proxies2 = [
+        'https://corsproxy.io/?',
+        'https://api.codetabs.com/v1/proxy?quest='
+      ];
+      var resolveTarget = 'https://steamcommunity.com/id/' + rawId + '/games/?tab=all&xml=1';
+      function tryResolve(idx) {
+        if (idx >= proxies2.length) {
           el('steam-fetch-btn').textContent = '取得する';
           el('steam-fetch-btn').disabled = false;
           el('steam-result').style.display = 'block';
           el('steam-result-msg').textContent = 'Steam IDが見つかりませんでした。IDを確認してください。';
+          return;
         }
-      }).catch(function(e) {
-        el('steam-fetch-btn').textContent = '取得する';
-        el('steam-fetch-btn').disabled = false;
-        el('steam-result').style.display = 'block';
-        el('steam-result-msg').textContent = '取得失敗: ' + e.message;
-      });
+        fetch(proxies2[idx] + encodeURIComponent(resolveTarget))
+          .then(function(r) { return r.text(); })
+          .then(function(text) {
+            var parser = new DOMParser();
+            var xml = parser.parseFromString(text, 'text/xml');
+            var sid = xml.querySelector('steamID64');
+            if (sid) { fetchGames(sid.textContent); }
+            else { tryResolve(idx + 1); }
+          }).catch(function() { tryResolve(idx + 1); });
+      }
+      tryResolve(0);
     }
   });
 
@@ -1159,13 +1209,100 @@
       });
     });
     if (!newItems.length) { alert('選択されたゲームがありません'); return; }
-    if (!confirm(newItems.length + ' 本のゲームをインポートします。続けますか？')) return;
-    newItems.forEach(function(x) { items.unshift(x); });
+    if (!confirm(newItems.length + ' 本のゲームで上書きします。現在のデータは消えます。続けますか？')) return;
+    items = newItems;
     saveData();
     el('steam-modal').classList.remove('open');
     if (currentView === 'grid') renderGrid(); else renderTimeline();
     alert(newItems.length + ' 件をインポートしました！');
   });
+
+  // ===== テーマ・カラーカスタマイズ =====
+  var THEME_PRESETS = [
+    { name: 'デフォルト', bg:'#f5f0e8', surface:'#fdfaf4', ink:'#1a1612', accent:'#c94a2a', header:'#1a1612', border:'#d0c8b8' },
+    { name: 'ダーク',     bg:'#1a1a2e', surface:'#16213e', ink:'#e0e0e0', accent:'#e94560', header:'#0f3460', border:'#2a2a4a' },
+    { name: 'ミント',     bg:'#f0f7f4', surface:'#ffffff', ink:'#1a2e28', accent:'#2d9e7a', header:'#1a3a2e', border:'#b8ddd0' },
+    { name: 'ネイビー',   bg:'#eef2f7', surface:'#ffffff', ink:'#1a2540', accent:'#3a6fd8', header:'#1a2540', border:'#c0ccdd' },
+    { name: 'セピア',     bg:'#f2ead8', surface:'#faf5e8', ink:'#3a2a1a', accent:'#8b5e2a', header:'#3a2a1a', border:'#d8c8a0' },
+    { name: 'ピンク',     bg:'#fff0f5', surface:'#ffffff', ink:'#2a1a1f', accent:'#e0527a', header:'#3a1a25', border:'#f0c0cc' },
+  ];
+
+  function applyTheme(t) {
+    var r = document.documentElement.style;
+    r.setProperty('--bg',      t.bg);
+    r.setProperty('--surface', t.surface);
+    r.setProperty('--surface2', adjustColor(t.surface, -10));
+    r.setProperty('--ink',     t.ink);
+    r.setProperty('--ink2',    adjustColor(t.ink, 40));
+    r.setProperty('--ink3',    adjustColor(t.ink, 70));
+    r.setProperty('--accent',  t.accent);
+    r.setProperty('--border',  t.border);
+    var header = document.querySelector('header');
+    if (header) header.style.background = t.header;
+    localStorage.setItem('sakuhin-theme', JSON.stringify(t));
+  }
+
+  function adjustColor(hex, amount) {
+    var r = parseInt(hex.slice(1,3),16);
+    var g = parseInt(hex.slice(3,5),16);
+    var b = parseInt(hex.slice(5,7),16);
+    r = Math.min(255, Math.max(0, r + amount));
+    g = Math.min(255, Math.max(0, g + amount));
+    b = Math.min(255, Math.max(0, b + amount));
+    return '#' + [r,g,b].map(function(v){return ('0'+v.toString(16)).slice(-2);}).join('');
+  }
+
+  function loadTheme() {
+    try { var s = localStorage.getItem('sakuhin-theme'); if (s) applyTheme(JSON.parse(s)); } catch(e) {}
+  }
+
+  function syncThemeInputs() {
+    var t = JSON.parse(localStorage.getItem('sakuhin-theme') || 'null') || THEME_PRESETS[0];
+    el('tc-bg').value = t.bg; el('tc-surface').value = t.surface;
+    el('tc-ink').value = t.ink; el('tc-accent').value = t.accent;
+    el('tc-header').value = t.header; el('tc-border').value = t.border;
+  }
+
+  THEME_PRESETS.forEach(function(p) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.style.cssText = 'padding:6px 14px;border-radius:4px;border:2px solid ' + p.border + ';background:' + p.bg + ';color:' + p.ink + ';font-size:12px;cursor:pointer;font-family:inherit;transition:transform 0.1s;';
+    btn.textContent = p.name;
+    btn.addEventListener('mouseenter', function() { this.style.transform='scale(1.05)'; });
+    btn.addEventListener('mouseleave', function() { this.style.transform=''; });
+    btn.addEventListener('click', function() {
+      el('tc-bg').value=p.bg; el('tc-surface').value=p.surface;
+      el('tc-ink').value=p.ink; el('tc-accent').value=p.accent;
+      el('tc-header').value=p.header; el('tc-border').value=p.border;
+      applyTheme(p);
+    });
+    el('theme-presets').appendChild(btn);
+  });
+
+  el('theme-btn').addEventListener('click', function() {
+    el('data-menu').style.display = 'none';
+    syncThemeInputs();
+    el('theme-modal').classList.add('open');
+  });
+  el('theme-modal-close').addEventListener('click', function() { el('theme-modal').classList.remove('open'); });
+  el('theme-cancel-btn').addEventListener('click', function() { el('theme-modal').classList.remove('open'); });
+  el('theme-save-btn').addEventListener('click', function() {
+    applyTheme({ bg:el('tc-bg').value, surface:el('tc-surface').value, ink:el('tc-ink').value, accent:el('tc-accent').value, header:el('tc-header').value, border:el('tc-border').value });
+    el('theme-modal').classList.remove('open');
+  });
+  ['tc-bg','tc-surface','tc-ink','tc-accent','tc-header','tc-border'].forEach(function(id) {
+    el(id).addEventListener('input', function() {
+      applyTheme({ bg:el('tc-bg').value, surface:el('tc-surface').value, ink:el('tc-ink').value, accent:el('tc-accent').value, header:el('tc-header').value, border:el('tc-border').value });
+    });
+  });
+  el('theme-reset-btn').addEventListener('click', function() {
+    localStorage.removeItem('sakuhin-theme');
+    applyTheme(THEME_PRESETS[0]);
+    syncThemeInputs();
+  });
+
+  loadTheme();
+
   var CLIENT_ID = '586982625413-hto13tgg5sasgh4cdmvh8jibb7kbs2va.apps.googleusercontent.com';
   var SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
   var DRIVE_FILE_NAME = 'sakuhin-log-data.json';
