@@ -203,6 +203,33 @@
     width: 4px; border-radius: 2px; flex-shrink: 0;
     margin-left: 4px; min-height: 20px;
   }
+
+  /* 左右交互レイアウト */
+  .tl-zigzag { padding: 0; }
+  .tl-zigzag .tl-year-label { padding-left: 0; text-align: center; }
+  .tl-zz-row {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    align-items: flex-start;
+    min-height: 80px;
+  }
+  .tl-zz-left { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; padding: 6px 18px 20px 0; }
+  .tl-zz-right { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-start; padding: 6px 0 20px 18px; }
+  .tl-zz-center {
+    display: flex; flex-direction: column; align-items: center;
+    position: relative; padding-top: 10px;
+  }
+  .tl-zz-center .tl-vert-line { width: 2px; flex: 1; min-height: 40px; align-self: stretch; }
+  .tl-zz-month-label {
+    font-family: 'DM Mono', monospace; font-size: 13px; color: var(--ink2);
+    font-weight: 500; white-space: nowrap; position: relative; z-index: 1;
+    background: var(--bg); padding: 2px 4px; border-radius: 3px;
+  }
+  .tl-zz-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--bg);
+    flex-shrink: 0; margin: 4px 0;
+  }
   .tl-period-dot-line {
     width: 4px; flex-shrink: 0; margin-left: 4px;
     background-image: repeating-linear-gradient(to bottom, currentColor 0, currentColor 4px, transparent 4px, transparent 8px);
@@ -339,7 +366,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.2.1</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.2.3</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -365,20 +392,14 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.2.1</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.2.3</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
 
 <div class="toolbar">
   <button class="filter-btn active" data-genre="all">すべて</button>
-  <button class="filter-btn" data-genre="ゲーム">ゲーム</button>
-  <button class="filter-btn" data-genre="映画">映画</button>
-  <button class="filter-btn" data-genre="小説">小説</button>
-  <button class="filter-btn" data-genre="マンガ">マンガ</button>
-  <button class="filter-btn" data-genre="アニメ">アニメ</button>
-  <button class="filter-btn" data-genre="音楽">音楽</button>
-  <button class="filter-btn" data-genre="心情">心情</button>
+  <div id="genre-filter-btns"></div>
   <div style="position:relative;">
     <button class="filter-btn" id="tag-filter-btn">タグ</button>
     <div id="tag-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px var(--shadow);z-index:200;min-width:200px;max-width:280px;padding:10px 12px;">
@@ -415,6 +436,9 @@
     <button class="view-btn active" id="tl-mode-normal-btn">通常</button>
     <button class="view-btn" id="tl-mode-important-btn">重要</button>
     <button type="button" id="tl-important-edit-btn" style="display:none;padding:5px 12px;border:1.5px solid var(--accent);border-radius:4px;background:none;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">重要を設定…</button>
+    <div style="width:1px;height:20px;background:var(--border);margin:0 2px;"></div>
+    <button class="layout-btn active" id="tl-layout-normal-btn" title="通常レイアウト">|||</button>
+    <button class="layout-btn" id="tl-layout-zigzag-btn" title="左右交互レイアウト">⇌</button>
     <button class="dl-btn" id="dl-btn" style="margin:0 0 0 auto;">年表をHTMLでダウンロード</button>
   </div>
   <div id="timeline-content"></div>
@@ -552,16 +576,8 @@
       <div class="form-two">
         <div class="form-row">
           <label>ジャンル</label>
-          <select id="f-genre">
-            <option value="ゲーム">ゲーム</option>
-            <option value="映画">映画</option>
-            <option value="小説">小説</option>
-            <option value="マンガ">マンガ</option>
-            <option value="アニメ">アニメ</option>
-            <option value="音楽">音楽</option>
-            <option value="心情">心情</option>
-            <option value="その他">その他</option>
-          </select>
+          <select id="f-genre"></select>
+          <button type="button" id="add-genre-btn" style="margin-top:5px;font-size:11px;background:none;border:none;color:var(--accent2);cursor:pointer;padding:0;text-align:left;">＋ ジャンルを追加</button>
         </div>
         <div class="form-row">
           <label>種類・カテゴリ</label>
@@ -641,12 +657,76 @@
   var items = [];
   try { items = JSON.parse(localStorage.getItem('sakuhin-log') || '[]'); } catch(e) { items = []; }
 
+  // ===== ジャンル管理 =====
+  var DEFAULT_GENRES = ['ゲーム','映画','小説','マンガ','アニメ','音楽','心情','その他'];
+  var DEFAULT_GENRE_COLORS = {
+    'ゲーム':'#2a6e8c','映画':'#c94a2a','小説':'#5a7a3a','マンガ':'#8c5a2a',
+    'アニメ':'#6a2a8c','音楽':'#1a7a6a','心情':'#8c3a6a','その他':'#555'
+  };
+  var customGenres = [];
+  try { customGenres = JSON.parse(localStorage.getItem('sakuhin-genres') || '[]'); } catch(e) {}
+
+  function getAllGenres() {
+    return DEFAULT_GENRES.concat(customGenres);
+  }
+
+  function saveGenres() {
+    localStorage.setItem('sakuhin-genres', JSON.stringify(customGenres));
+  }
+
+  function addGenre(name, color) {
+    if (!name || getAllGenres().indexOf(name) !== -1) return false;
+    customGenres.push({ name: name, color: color || '#888' });
+    saveGenres();
+    rebuildGenreUI();
+    return true;
+  }
+
+  function rebuildGenreUI() {
+    var genres = getAllGenres();
+
+    // ツールバーボタン
+    var container = el('genre-filter-btns');
+    container.innerHTML = '';
+    container.style.cssText = 'display:contents;';
+    genres.forEach(function(g) {
+      var name = typeof g === 'string' ? g : g.name;
+      var btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.setAttribute('data-genre', name);
+      btn.textContent = name;
+      btn.addEventListener('click', function() {
+        if (currentFilter.has(name)) { currentFilter.delete(name); }
+        else { currentFilter.add(name); }
+        updateFilterBtns();
+        if (currentView === 'grid') renderGrid(); else renderTimeline();
+      });
+      container.appendChild(btn);
+    });
+
+    // モーダルのselect
+    var sel = el('f-genre');
+    var curVal = sel.value;
+    sel.innerHTML = '';
+    genres.forEach(function(g) {
+      var name = typeof g === 'string' ? g : g.name;
+      var opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      sel.appendChild(opt);
+    });
+    if (curVal) sel.value = curVal;
+
+    // フィルターボタンの状態を反映
+    updateFilterBtns();
+  }
+
   var currentFilter = new Set(); // 空 = すべて表示
   var currentTagFilter = null;
   var currentView = 'grid';
   var currentLayout = localStorage.getItem('sakuhin-layout') || 'normal';
   var currentSort = 'default'; // 'default' | 'name' | 'lastdate'
   var tlMode = 'normal'; // 'normal' | 'important'
+  var tlLayout = 'normal'; // 'normal' | 'zigzag'
   var importantIds = JSON.parse(localStorage.getItem('sakuhin-important') || '{}'); // id -> true
   var editingId = null;
   var currentStar = 0;
@@ -685,8 +765,12 @@
 
   // ジャンルごとのデフォルト色
   function genreDefaultColor(g) {
-    var map = { 'ゲーム':'#2a6e8c','映画':'#c94a2a','小説':'#5a7a3a','マンガ':'#8c5a2a','アニメ':'#6a2a8c','音楽':'#1a7a6a','心情':'#8c3a6a','その他':'#555' };
-    return map[g] || '#888';
+    if (DEFAULT_GENRE_COLORS[g]) return DEFAULT_GENRE_COLORS[g];
+    // カスタムジャンルの色を探す
+    for (var i = 0; i < customGenres.length; i++) {
+      if (customGenres[i].name === g) return customGenres[i].color;
+    }
+    return '#888';
   }
 
   // 月モードの値（YYYY-MM）をYYYY-MM-01に正規化して比較可能にする
@@ -985,7 +1069,7 @@
           ? '<img src="' + item.photo + '" alt="">'
           : '<span style="font-size:52px">' + genreIcon(item.genre) + '</span>'
             + '<div class="card-photo-placeholder">' + item.genre + (item.type ? '<br><span style="font-size:9px;opacity:0.7">' + item.type + '</span>' : '') + '</div>')
-        + '<span class="card-genre-badge badge-' + item.genre + '">' + item.genre + typeStr + '</span>'
+        + '<span class="card-genre-badge" style="background:' + genreDefaultColor(item.genre) + '">' + item.genre + typeStr + '</span>'
         + '<span class="status-dot ' + status + '" title="' + status + '"></span>'
         + '</div>'
         + '<div class="card-body">'
@@ -1072,28 +1156,14 @@
 
       // 月も降順
       var months = Object.keys(grouped[year]).map(Number).sort(function(a,b){return b-a;});
-      months.forEach(function(month) {
-        var row = document.createElement('div');
-        row.className = 'tl-month-row';
 
-        var mlabel = document.createElement('div');
-        mlabel.className = 'tl-month-label';
-        mlabel.textContent = month + '月';
-
-        var line = document.createElement('div');
-        line.className = 'tl-vert-line';
-
-        var cardsWrap = document.createElement('div');
-        cardsWrap.className = 'tl-cards';
-
-        grouped[year][month].forEach(function(item) {
+      months.forEach(function(month, monthIdx) {
+        // カードラッパー生成ロジック（通常・zigzag共通）
+        function makeCardWrap(item) {
           var itemColor = item.color || genreDefaultColor(item.genre);
           var dates = getItemDates(item);
-
-          // カードラッパー（カード＋期間線を縦に並べる）
           var cardWrap = document.createElement('div');
           cardWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex-shrink:0;';
-
           var card = document.createElement('div');
           card.className = 'tl-card';
           var typeStr = item.type ? ' / ' + item.type : '';
@@ -1110,36 +1180,86 @@
             return function() { openModal(id); };
           })(item.id));
           cardWrap.appendChild(card);
-
-          // 期間線を描画（月モードは線なし）
-          dates.forEach(function(d, di) {
+          // 期間線
+          dates.forEach(function(d) {
             if (!d.start && !d.end) return;
-            if (d.mode === 'month') return; // 月モードは線なし
+            if (d.mode === 'month') return;
             var hasBoth = d.start && d.end;
             var hasOnlyEnd = !d.start && d.end;
-
             if (hasBoth) {
-              var line = document.createElement('div');
-              line.className = 'tl-period-line';
-              line.style.cssText = 'background:' + itemColor + ';height:28px;';
-              cardWrap.appendChild(line);
+              var pl = document.createElement('div');
+              pl.className = 'tl-period-line';
+              pl.style.cssText = 'background:' + itemColor + ';height:28px;';
+              cardWrap.appendChild(pl);
             } else if (hasOnlyEnd) {
-              var lineS = document.createElement('div');
-              lineS.className = 'tl-period-line';
-              lineS.style.cssText = 'background:' + itemColor + ';height:14px;';
-              cardWrap.appendChild(lineS);
-              var lineDot = document.createElement('div');
-              lineDot.className = 'tl-period-dot-line';
-              lineDot.style.cssText = 'color:' + itemColor + ';height:20px;';
-              cardWrap.appendChild(lineDot);
+              var ps = document.createElement('div');
+              ps.className = 'tl-period-line';
+              ps.style.cssText = 'background:' + itemColor + ';height:14px;';
+              cardWrap.appendChild(ps);
+              var pd = document.createElement('div');
+              pd.className = 'tl-period-dot-line';
+              pd.style.cssText = 'color:' + itemColor + ';height:20px;';
+              cardWrap.appendChild(pd);
             }
           });
+          return cardWrap;
+        }
 
-          cardsWrap.appendChild(cardWrap);
-        });
+        if (tlLayout === 'zigzag') {
+          // 左右交互レイアウト：偶数月=右、奇数月=左
+          var isRight = monthIdx % 2 === 0;
 
-        row.appendChild(mlabel); row.appendChild(line); row.appendChild(cardsWrap);
-        yearDiv.appendChild(row);
+          var row = document.createElement('div');
+          row.className = 'tl-zz-row';
+
+          var leftWrap = document.createElement('div');
+          leftWrap.className = 'tl-zz-left';
+
+          var centerWrap = document.createElement('div');
+          centerWrap.className = 'tl-zz-center';
+          var dot = document.createElement('div');
+          dot.className = 'tl-zz-dot';
+          var mlabel = document.createElement('div');
+          mlabel.className = 'tl-zz-month-label';
+          mlabel.textContent = month + '月';
+          var vline = document.createElement('div');
+          vline.className = 'tl-vert-line';
+          vline.style.flex = '1';
+          centerWrap.appendChild(dot);
+          centerWrap.appendChild(mlabel);
+          centerWrap.appendChild(vline);
+
+          var rightWrap = document.createElement('div');
+          rightWrap.className = 'tl-zz-right';
+
+          grouped[year][month].forEach(function(item) {
+            var cw = makeCardWrap(item);
+            if (isRight) rightWrap.appendChild(cw);
+            else leftWrap.appendChild(cw);
+          });
+
+          row.appendChild(leftWrap);
+          row.appendChild(centerWrap);
+          row.appendChild(rightWrap);
+          yearDiv.appendChild(row);
+
+        } else {
+          // 通常レイアウト（既存）
+          var row = document.createElement('div');
+          row.className = 'tl-month-row';
+          var mlabel = document.createElement('div');
+          mlabel.className = 'tl-month-label';
+          mlabel.textContent = month + '月';
+          var line = document.createElement('div');
+          line.className = 'tl-vert-line';
+          var cardsWrap = document.createElement('div');
+          cardsWrap.className = 'tl-cards';
+          grouped[year][month].forEach(function(item) {
+            cardsWrap.appendChild(makeCardWrap(item));
+          });
+          row.appendChild(mlabel); row.appendChild(line); row.appendChild(cardsWrap);
+          yearDiv.appendChild(row);
+        }
       });
       content.appendChild(yearDiv);
     });
@@ -1351,6 +1471,20 @@
     renderTimeline();
   });
 
+  // 年表レイアウト切り替え
+  el('tl-layout-normal-btn').addEventListener('click', function() {
+    tlLayout = 'normal';
+    el('tl-layout-normal-btn').classList.add('active');
+    el('tl-layout-zigzag-btn').classList.remove('active');
+    renderTimeline();
+  });
+  el('tl-layout-zigzag-btn').addEventListener('click', function() {
+    tlLayout = 'zigzag';
+    el('tl-layout-zigzag-btn').classList.add('active');
+    el('tl-layout-normal-btn').classList.remove('active');
+    renderTimeline();
+  });
+
   // 重要設定モーダルを開く（年表内）
   el('tl-important-edit-btn').addEventListener('click', function() {
     openImportantModal();
@@ -1413,6 +1547,34 @@
     else importantIds[editingId] = true;
     localStorage.setItem('sakuhin-important', JSON.stringify(importantIds));
     updateImportantBtn(editingId);
+  });
+
+  el('add-genre-btn').addEventListener('click', function() {
+    var name = prompt('新しいジャンル名を入力してください');
+    if (!name) return;
+    name = name.trim();
+    if (!name) return;
+    if (getAllGenres().indexOf(name) !== -1) {
+      showToast('そのジャンルはすでに存在します', 'error'); return;
+    }
+    var color = genreDefaultColor('その他');
+    // カラーピッカーで色を選ぶ
+    var colorInput = document.createElement('input');
+    colorInput.type = 'color'; colorInput.value = '#888888';
+    colorInput.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+    document.body.appendChild(colorInput);
+    colorInput.addEventListener('change', function() {
+      color = colorInput.value;
+      document.body.removeChild(colorInput);
+      if (addGenre(name, color)) {
+        el('f-genre').value = name;
+        el('f-color').value = color;
+        showToast('ジャンル「' + name + '」を追加しました', 'success');
+      }
+    });
+    colorInput.addEventListener('input', function() { color = colorInput.value; });
+    // promptの後すぐに色選択
+    setTimeout(function() { colorInput.click(); }, 100);
   });
 
   el('add-btn').addEventListener('click', function() { openModal(null); });
@@ -2165,6 +2327,9 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sakuhin-log/sw.js').catch(function() {});
   }
+
+  // ジャンルUI初期構築
+  rebuildGenreUI();
 
   // 初期レンダリング
   renderGrid();
