@@ -155,6 +155,38 @@
   }
   .layout-btn.active { background: var(--ink2); color: #fff; border-color: var(--ink2); }
 
+  /* 一括操作バー */
+  #bulk-bar {
+    display: none; position: sticky; top: 52px; z-index: 90;
+    background: var(--ink); color: var(--bg);
+    padding: 10px 24px; gap: 10px; align-items: center; flex-wrap: wrap;
+    border-bottom: 2px solid var(--accent);
+  }
+  #bulk-bar.show { display: flex; }
+  #bulk-bar span { font-size: 13px; font-family: 'DM Mono', monospace; }
+  .bulk-btn {
+    padding: 5px 14px; border-radius: 4px; border: 1.5px solid rgba(255,255,255,0.3);
+    background: none; color: var(--bg); font-size: 12px; cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .bulk-btn:hover { background: rgba(255,255,255,0.1); }
+  .bulk-btn.danger { border-color: #e06060; color: #e06060; }
+  /* カード選択中のスタイル */
+  .card.selected { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+  .card .select-check {
+    display: none; position: absolute; top: 8px; right: 8px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--bg); border: 2px solid var(--border);
+    align-items: center; justify-content: center; font-size: 11px;
+    z-index: 3; pointer-events: none;
+  }
+  body.select-mode .card .select-check { display: flex; }
+  body.select-mode .card.selected .select-check {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  body.select-mode .card { cursor: pointer; }
+
   /* 年表ビュー */
   #timeline-view { display: none; padding: 24px 24px 24px 0; }
   .tl-year-label {
@@ -366,7 +398,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.2.4</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.2.6</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -392,7 +424,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.2.4</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.2.6</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -414,12 +446,45 @@
       <option value="name">名前順</option>
       <option value="lastdate">最終日順</option>
     </select>
-    <button class="layout-btn active" id="layout-normal-btn" title="通常表示">▦</button>
-    <button class="layout-btn" id="layout-compact-btn" title="コンパクト表示">⊞</button>
-    <button class="view-btn active" id="view-grid-btn">カード</button>
-    <button class="view-btn" id="view-tl-btn">年表</button>
+    <!-- カード表示グループ -->
+    <div style="display:flex;border:1.5px solid var(--border);border-radius:4px;overflow:hidden;">
+      <button id="layout-normal-btn" title="通常表示" style="padding:0 9px;height:32px;background:var(--ink2);border:none;border-right:1px solid var(--border);cursor:pointer;display:flex;align-items:center;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="color:#fff;"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      </button>
+      <button id="layout-compact-btn" title="コンパクト表示" style="padding:0 9px;height:32px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="color:var(--ink2);"><rect x="1" y="1" width="4" height="4" rx="0.5"/><rect x="6" y="1" width="4" height="4" rx="0.5"/><rect x="11" y="1" width="4" height="4" rx="0.5"/><rect x="1" y="6" width="4" height="4" rx="0.5"/><rect x="6" y="6" width="4" height="4" rx="0.5"/><rect x="11" y="6" width="4" height="4" rx="0.5"/><rect x="1" y="11" width="4" height="4" rx="0.5"/><rect x="6" y="11" width="4" height="4" rx="0.5"/><rect x="11" y="11" width="4" height="4" rx="0.5"/></svg>
+      </button>
+    </div>
+    <!-- ビュー切替グループ -->
+    <div style="display:flex;border:1.5px solid var(--border);border-radius:4px;overflow:hidden;">
+      <button id="view-grid-btn" title="カード表示" style="padding:0 9px;height:32px;background:var(--ink2);border:none;border-right:1px solid var(--border);cursor:pointer;display:flex;align-items:center;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="color:#fff;"><rect x="1" y="1" width="6" height="9" rx="1"/><rect x="9" y="1" width="6" height="9" rx="1"/><rect x="1" y="12" width="6" height="3" rx="1"/><rect x="9" y="12" width="6" height="3" rx="1"/></svg>
+      </button>
+      <button id="view-tl-btn" title="年表表示" style="padding:0 9px;height:32px;background:transparent;border:none;border-right:1px solid var(--border);cursor:pointer;display:flex;align-items:center;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="color:var(--ink2);"><rect x="1" y="7" width="14" height="2" rx="1"/><circle cx="4" cy="8" r="2.5"/><circle cx="8" cy="8" r="2.5"/><circle cx="12" cy="8" r="2.5"/><rect x="3" y="2" width="2" height="4" rx="1"/><rect x="7" y="2" width="2" height="4" rx="1"/><rect x="11" y="2" width="2" height="4" rx="1"/></svg>
+      </button>
+      <button id="select-mode-btn" title="選択モード" style="padding:0 9px;height:32px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ink2);"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><polyline points="9,11.5 11,13.5 14.5,10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
     <button class="add-btn" id="add-btn">＋ 追加</button>
   </div>
+</div>
+
+<!-- 一括操作バー -->
+<div id="bulk-bar">
+  <span id="bulk-count">0 件選択中</span>
+  <button class="bulk-btn" id="bulk-all-btn">全選択</button>
+  <button class="bulk-btn" id="bulk-important-btn">重要に設定</button>
+  <div style="position:relative;">
+    <button class="bulk-btn" id="bulk-color-btn">テーマカラー変更</button>
+    <input type="color" id="bulk-color-input" value="#2a6e8c" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
+  </div>
+  <div style="position:relative;">
+    <button class="bulk-btn" id="bulk-genre-btn">ジャンル変更</button>
+    <div id="bulk-genre-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:300;min-width:120px;overflow:hidden;"></div>
+  </div>
+  <button class="bulk-btn danger" id="bulk-cancel-btn" style="margin-left:auto;">キャンセル</button>
 </div>
 
 <div class="count-bar" id="count-bar">0 件</div>
@@ -728,7 +793,9 @@
   var currentSort = 'default'; // 'default' | 'name' | 'lastdate'
   var tlMode = 'normal'; // 'normal' | 'important'
   var tlLayout = 'normal'; // 'normal' | 'zigzag'
-  var importantIds = JSON.parse(localStorage.getItem('sakuhin-important') || '{}'); // id -> true
+  var importantIds = JSON.parse(localStorage.getItem('sakuhin-important') || '{}');
+  var selectMode = false;
+  var selectedIds = new Set();
   var editingId = null;
   var currentStar = 0;
   var photoData = null;
@@ -1082,18 +1149,31 @@
         + (item.memoPhoto ? '<img src="' + item.memoPhoto + '" style="width:100%;margin-top:7px;border-radius:3px;border:1px solid var(--border);" alt="">' : '')
         + '</div>';
       card.setAttribute('data-id', String(item.id));
+      // 選択チェックマーク
+      var check = document.createElement('div');
+      check.className = 'select-check';
+      check.textContent = '✓';
+      card.appendChild(check);
+      // 選択状態を反映
+      if (selectedIds.has(String(item.id))) card.classList.add('selected');
       grid.appendChild(card);
     });
 
-    // イベント委譲：グリッド全体で1つのclickリスナー
+    // イベント委譲：選択モードとモーダルを切り替え
     grid.addEventListener('click', function(e) {
       var card = e.target.closest('.card');
       if (!card) return;
       var id = card.getAttribute('data-id');
       if (!id) return;
-      // 数値か文字列かを判定して正しい型で渡す
-      var numId = parseFloat(id);
-      openModal(isNaN(numId) ? id : numId);
+      if (selectMode) {
+        // 選択モード：選択トグル
+        if (selectedIds.has(id)) { selectedIds.delete(id); card.classList.remove('selected'); }
+        else { selectedIds.add(id); card.classList.add('selected'); }
+        updateBulkBar();
+      } else {
+        var numId = parseFloat(id);
+        openModal(isNaN(numId) ? id : numId);
+      }
     });
   }
 
@@ -1414,8 +1494,25 @@
   // ビュー切り替え
   // レイアウト切り替え（通常 / コンパクト）
   function applyLayoutBtns() {
-    el('layout-normal-btn').classList.toggle('active', currentLayout === 'normal');
-    el('layout-compact-btn').classList.toggle('active', currentLayout === 'compact');
+    var nb = el('layout-normal-btn'), cb = el('layout-compact-btn');
+    nb.style.background = currentLayout === 'normal' ? 'var(--ink2)' : 'transparent';
+    nb.querySelector('svg').style.color = currentLayout === 'normal' ? '#fff' : 'var(--ink2)';
+    cb.style.background = currentLayout === 'compact' ? 'var(--ink2)' : 'transparent';
+    cb.querySelector('svg').style.color = currentLayout === 'compact' ? '#fff' : 'var(--ink2)';
+  }
+
+  function applyViewBtns(view) {
+    var gb = el('view-grid-btn'), tb = el('view-tl-btn');
+    gb.style.background = view === 'grid' ? 'var(--ink2)' : 'transparent';
+    gb.querySelector('svg').style.color = view === 'grid' ? '#fff' : 'var(--ink2)';
+    tb.style.background = view === 'timeline' ? 'var(--ink2)' : 'transparent';
+    tb.querySelector('svg').style.color = view === 'timeline' ? '#fff' : 'var(--ink2)';
+  }
+
+  function applySelectBtn(active) {
+    var sb = el('select-mode-btn');
+    sb.style.background = active ? 'var(--accent)' : 'transparent';
+    sb.querySelector('svg').style.color = active ? '#fff' : 'var(--ink2)';
   }
   applyLayoutBtns();
 
@@ -1434,13 +1531,13 @@
 
   el('view-grid-btn').addEventListener('click', function() {
     currentView = 'grid';
-    el('view-grid-btn').classList.add('active'); el('view-tl-btn').classList.remove('active');
+    applyViewBtns('grid');
     el('grid-view').style.display = 'grid'; el('timeline-view').style.display = 'none';
     renderGrid();
   });
   el('view-tl-btn').addEventListener('click', function() {
     currentView = 'timeline';
-    el('view-tl-btn').classList.add('active'); el('view-grid-btn').classList.remove('active');
+    applyViewBtns('timeline');
     el('grid-view').style.display = 'none'; el('timeline-view').style.display = 'block';
     renderTimeline();
   });
@@ -1577,6 +1674,215 @@
     // promptの後すぐに色選択
     setTimeout(function() { colorInput.click(); }, 100);
   });
+
+  // ===== 一括選択 =====
+  function enterSelectMode() {
+    selectMode = true;
+    selectedIds = new Set();
+    document.body.classList.add('select-mode');
+    applySelectBtn(true);
+    el('bulk-bar').classList.add('show');
+    updateBulkBar();
+    renderGrid();
+  }
+
+  function exitSelectMode() {
+    selectMode = false;
+    selectedIds = new Set();
+    document.body.classList.remove('select-mode');
+    applySelectBtn(false);
+    el('bulk-bar').classList.remove('show');
+    renderGrid();
+  }
+
+  function updateBulkBar() {
+    el('bulk-count').textContent = selectedIds.size + ' 件選択中';
+  }
+
+  el('select-mode-btn').addEventListener('click', function() {
+    if (selectMode) exitSelectMode(); else enterSelectMode();
+  });
+
+  el('bulk-cancel-btn').addEventListener('click', exitSelectMode);
+
+  el('bulk-all-btn').addEventListener('click', function() {
+    var filtered = getFiltered();
+    if (selectedIds.size === filtered.length) {
+      selectedIds = new Set();
+    } else {
+      filtered.forEach(function(x) { selectedIds.add(String(x.id)); });
+    }
+    updateBulkBar();
+    renderGrid();
+  });
+
+  // 一括重要設定
+  el('bulk-important-btn').addEventListener('click', function() {
+    if (!selectedIds.size) { showToast('作品を選択してください', 'error'); return; }
+    var allImportant = true;
+    selectedIds.forEach(function(id) { if (!importantIds[id]) allImportant = false; });
+    selectedIds.forEach(function(id) {
+      if (allImportant) delete importantIds[id];
+      else importantIds[id] = true;
+    });
+    localStorage.setItem('sakuhin-important', JSON.stringify(importantIds));
+    showToast((allImportant ? '重要を解除' : '重要に設定') + ': ' + selectedIds.size + ' 件', 'success');
+    exitSelectMode();
+  });
+
+  // 一括テーマカラー変更
+  el('bulk-color-btn').addEventListener('click', function() {
+    if (!selectedIds.size) { showToast('作品を選択してください', 'error'); return; }
+    el('bulk-color-input').click();
+  });
+  el('bulk-color-input').addEventListener('change', function() {
+    var color = this.value;
+    selectedIds.forEach(function(id) {
+      for (var i = 0; i < items.length; i++) {
+        if (String(items[i].id) === id) { items[i].color = color; break; }
+      }
+    });
+    saveData();
+    showToast('テーマカラーを変更: ' + selectedIds.size + ' 件', 'success');
+    exitSelectMode();
+  });
+
+  // 一括ジャンル変更
+  el('bulk-genre-btn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (!selectedIds.size) { showToast('作品を選択してください', 'error'); return; }
+    var dd = el('bulk-genre-dropdown');
+    if (dd.style.display === 'block') { dd.style.display = 'none'; return; }
+    dd.innerHTML = '';
+    getAllGenres().forEach(function(g) {
+      var name = typeof g === 'string' ? g : g.name;
+      var btn = document.createElement('button');
+      btn.className = 'dmenu-btn';
+      btn.textContent = name;
+      btn.addEventListener('click', function() {
+        selectedIds.forEach(function(id) {
+          for (var i = 0; i < items.length; i++) {
+            if (String(items[i].id) === id) {
+              items[i].genre = name;
+              items[i].color = genreDefaultColor(name);
+              break;
+            }
+          }
+        });
+        saveData();
+        dd.style.display = 'none';
+        showToast('ジャンルを変更: ' + selectedIds.size + ' 件', 'success');
+        exitSelectMode();
+      });
+      dd.appendChild(btn);
+    });
+    dd.style.display = 'block';
+  });
+  document.addEventListener('click', function() { el('bulk-genre-dropdown').style.display = 'none'; });
+
+  // ===== 一括選択 =====
+  function enterSelectMode() {
+    selectMode = true;
+    selectedIds = new Set();
+    applySelectBtn(true);
+    el('bulk-bar').classList.add('show');
+    el('add-btn').style.display = 'none';
+    updateBulkBar();
+    renderGrid();
+  }
+
+  function exitSelectMode() {
+    selectMode = false;
+    selectedIds = new Set();
+    applySelectBtn(false);
+    el('bulk-bar').classList.remove('show');
+    el('add-btn').style.display = '';
+    document.body.classList.remove('select-mode');
+    renderGrid();
+  }
+
+  function updateBulkBar() {
+    el('bulk-count').textContent = selectedIds.size + ' 件選択中';
+    document.body.classList.toggle('select-mode', selectMode);
+    // ジャンルドロップダウンを更新
+    var dd = el('bulk-genre-dropdown');
+    dd.innerHTML = '';
+    getAllGenres().forEach(function(g) {
+      var name = typeof g === 'string' ? g : g.name;
+      var btn = document.createElement('button');
+      btn.className = 'dmenu-btn';
+      btn.textContent = name;
+      btn.addEventListener('click', function() {
+        dd.style.display = 'none';
+        selectedIds.forEach(function(id) {
+          for (var i = 0; i < items.length; i++) {
+            if (String(items[i].id) === String(id)) { items[i].genre = name; break; }
+          }
+        });
+        _origSaveData();
+        showToast(selectedIds.size + ' 件のジャンルを変更しました', 'success');
+        exitSelectMode();
+      });
+      dd.appendChild(btn);
+    });
+  }
+
+  el('select-mode-btn').addEventListener('click', function() {
+    if (selectMode) exitSelectMode(); else enterSelectMode();
+  });
+
+  el('bulk-cancel-btn').addEventListener('click', function() { exitSelectMode(); });
+
+  el('bulk-all-btn').addEventListener('click', function() {
+    var filtered = getFiltered();
+    if (selectedIds.size === filtered.length) {
+      selectedIds = new Set(); // 全解除
+    } else {
+      filtered.forEach(function(item) { selectedIds.add(String(item.id)); });
+    }
+    updateBulkBar();
+    renderGrid();
+  });
+
+  el('bulk-important-btn').addEventListener('click', function() {
+    if (!selectedIds.size) { showToast('作品を選択してください', 'error'); return; }
+    var allImportant = true;
+    selectedIds.forEach(function(id) { if (!importantIds[id]) allImportant = false; });
+    selectedIds.forEach(function(id) {
+      if (allImportant) delete importantIds[id]; // 全部重要なら解除
+      else importantIds[id] = true;
+    });
+    localStorage.setItem('sakuhin-important', JSON.stringify(importantIds));
+    showToast(selectedIds.size + ' 件の重要を' + (allImportant ? '解除' : '設定') + 'しました', 'success');
+    exitSelectMode();
+  });
+
+  el('bulk-color-btn').addEventListener('click', function() {
+    if (!selectedIds.size) { showToast('作品を選択してください', 'error'); return; }
+    el('bulk-color-input').click();
+  });
+  el('bulk-color-input').addEventListener('change', function() {
+    var color = this.value;
+    selectedIds.forEach(function(id) {
+      for (var i = 0; i < items.length; i++) {
+        if (String(items[i].id) === String(id)) { items[i].color = color; break; }
+      }
+    });
+    _origSaveData();
+    showToast(selectedIds.size + ' 件のカラーを変更しました', 'success');
+    exitSelectMode();
+  });
+
+  el('bulk-genre-btn').addEventListener('click', function(e) {
+    if (!selectedIds.size) { showToast('作品を選択してください', 'error'); return; }
+    e.stopPropagation();
+    var dd = el('bulk-genre-dropdown');
+    dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+  });
+  document.addEventListener('click', function() {
+    el('bulk-genre-dropdown').style.display = 'none';
+  });
+  el('bulk-genre-dropdown').addEventListener('click', function(e) { e.stopPropagation(); });
 
   el('add-btn').addEventListener('click', function() { openModal(null); });
   el('modal-close-btn').addEventListener('click', closeModal);
@@ -2331,6 +2637,11 @@
 
   // ジャンルUI初期構築
   rebuildGenreUI();
+
+  // ボタン状態初期化
+  applyLayoutBtns();
+  applyViewBtns('grid');
+  applySelectBtn(false);
 
   // 初期レンダリング
   renderGrid();
