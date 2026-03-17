@@ -31,22 +31,22 @@
   header span { font-family: 'DM Mono', monospace; color: var(--ink3); font-size: 12px; }
 
   .toolbar {
-    padding: 0 16px; display: flex; gap: 0; align-items: center;
+    padding: 0 12px; display: flex; gap: 0; align-items: center;
     background: var(--surface); border-bottom: 1px solid var(--border);
-    height: 52px; overflow: hidden;
+    height: 52px; overflow: visible; position: relative;
   }
   /* ジャンルフィルター横スクロールエリア */
   #genre-scroll-area {
     display: flex; gap: 6px; align-items: center;
     flex: 1; overflow-x: auto; overflow-y: hidden;
-    padding: 8px 8px 8px 0; min-width: 0;
+    padding: 8px 6px 8px 0; min-width: 0;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
   }
   #genre-scroll-area::-webkit-scrollbar { display: none; }
-  /* 右側ボタン群 */
+  /* 右側ボタン群（PC） */
   .toolbar-right {
-    display: flex; gap: 8px; align-items: center;
+    display: flex; gap: 6px; align-items: center;
     flex-shrink: 0; padding-left: 8px;
     border-left: 1px solid var(--border); margin-left: 4px; height: 100%;
   }
@@ -54,10 +54,11 @@
   #toolbar-more-btn {
     display: none; padding: 0 11px; height: 34px; flex-shrink: 0;
     background: var(--surface2); border: 1.5px solid var(--border);
-    border-radius: 4px; cursor: pointer; font-size: 16px; color: var(--ink2);
+    border-radius: 4px; cursor: pointer; font-size: 18px; color: var(--ink2);
     line-height: 1; align-items: center; justify-content: center;
+    margin-left: 8px;
   }
-  /* スマホ用パネル */
+  /* スマホ用ドロップダウンパネル */
   #toolbar-more-panel {
     display: none; position: fixed; top: 52px; right: 0; left: 0; z-index: 150;
     background: var(--surface); border-bottom: 2px solid var(--border);
@@ -66,12 +67,11 @@
   }
   #toolbar-more-panel.open { display: flex; }
   #toolbar-more-panel .panel-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  /* 展開ボタンは不要 */
   #toolbar-expand-btn { display: none; }
   #toolbar-collapsible { display: none; }
   @media (max-width: 700px) {
     .toolbar-right { display: none; }
-    #toolbar-more-btn { display: flex; margin-left: auto; }
+    #toolbar-more-btn { display: flex; }
   }
   .filter-btn {
     padding: 5px 12px; border: 1.5px solid var(--border); background: transparent;
@@ -437,7 +437,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.3.4</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.3.5</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -463,7 +463,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.3.4</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.3.5</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
