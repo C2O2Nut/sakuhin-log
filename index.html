@@ -34,6 +34,33 @@
     padding: 12px 16px; display: flex; gap: 8px; align-items: center;
     background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap;
   }
+  /* スマホ用折りたたみ */
+  #toolbar-expand-btn {
+    display: none; padding: 0 10px; height: 34px; background: var(--surface2);
+    border: 1.5px solid var(--border); border-radius: 4px; cursor: pointer;
+    font-size: 16px; color: var(--ink2); flex-shrink: 0; transition: all 0.15s;
+  }
+  #toolbar-collapsible {
+    display: contents; /* デフォルトはそのまま展開 */
+  }
+  @media (max-width: 600px) {
+    .toolbar { flex-wrap: nowrap; overflow: hidden; position: relative; }
+    #toolbar-expand-btn { display: flex; align-items: center; justify-content: center; margin-left: auto; }
+    #toolbar-collapsible {
+      display: none;
+      position: fixed; top: 52px; right: 0; left: 0; z-index: 150;
+      background: var(--surface); border-bottom: 2px solid var(--border);
+      padding: 12px 16px; flex-direction: column; gap: 10px;
+      box-shadow: 0 8px 24px var(--shadow);
+    }
+    #toolbar-collapsible.open {
+      display: flex;
+    }
+    #toolbar-collapsible .toolbar-right {
+      margin-left: 0; flex-wrap: wrap; width: 100%;
+    }
+    .add-btn { flex: 1; text-align: center; }
+  }
   .filter-btn {
     padding: 5px 12px; border: 1.5px solid var(--border); background: transparent;
     border-radius: 20px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px;
@@ -398,7 +425,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.2.9</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.3.1</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -424,23 +451,48 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.2.9</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.3.1</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
 
 <div class="toolbar">
   <button class="filter-btn active" data-genre="all">すべて</button>
-  <div id="genre-filter-btns"></div>
-  <div style="position:relative;">
-    <button class="filter-btn" id="tag-filter-btn">タグ</button>
-    <div id="tag-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px var(--shadow);z-index:200;min-width:200px;max-width:280px;padding:10px 12px;">
-      <div style="font-size:11px;color:var(--ink3);margin-bottom:8px;letter-spacing:0.05em;">タグで絞り込み</div>
-      <div id="tag-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-      <button type="button" id="tag-clear-btn" style="margin-top:10px;font-size:11px;background:none;border:none;color:var(--ink3);cursor:pointer;padding:0;">絞り込みを解除</button>
+  <button id="toolbar-expand-btn" title="フィルター・操作を展開">›</button>
+  <div id="toolbar-collapsible">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <div id="genre-filter-btns"></div>
+      <div style="position:relative;">
+        <button class="filter-btn" id="tag-filter-btn">タグ</button>
+        <div id="tag-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px var(--shadow);z-index:200;min-width:200px;max-width:280px;padding:10px 12px;">
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:8px;letter-spacing:0.05em;">タグで絞り込み</div>
+          <div id="tag-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+          <button type="button" id="tag-clear-btn" style="margin-top:10px;font-size:11px;background:none;border:none;color:var(--ink3);cursor:pointer;padding:0;">絞り込みを解除</button>
+        </div>
+      </div>
+      <button class="filter-btn" id="star-filter-btn" data-stars="0">★</button>
+    </div>
+    <div class="toolbar-right">
+      <select id="sort-select" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:12px;background:var(--bg);color:var(--ink2);cursor:pointer;">
+        <option value="default">登録順</option>
+        <option value="name">名前順</option>
+        <option value="lastdate">最終日順</option>
+        <option value="stars_desc">星が高い順</option>
+        <option value="stars_asc">星が低い順</option>
+      </select>
+      <div style="display:flex;border:1.5px solid var(--border);border-radius:4px;overflow:hidden;">
+        <button class="layout-btn active" id="layout-normal-btn" title="通常表示" style="border-radius:0;border:none;border-right:1px solid var(--border);">▦</button>
+        <button class="layout-btn" id="layout-compact-btn" title="コンパクト" style="border-radius:0;border:none;">⊞</button>
+      </div>
+      <div style="display:flex;border:1.5px solid var(--border);border-radius:4px;overflow:hidden;">
+        <button class="view-btn active" id="view-grid-btn" style="border-radius:0;border:none;border-right:1px solid var(--border);">カード</button>
+        <button class="view-btn" id="view-tl-btn" style="border-radius:0;border:none;">年表</button>
+      </div>
+      <button class="view-btn" id="select-mode-btn">選択</button>
+      <button class="add-btn" id="add-btn">＋ 追加</button>
     </div>
   </div>
-  <div class="toolbar-right">
+</div>
     <select id="sort-select" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:12px;background:var(--bg);color:var(--ink2);cursor:pointer;">
       <option value="default">登録順</option>
       <option value="name">名前順</option>
@@ -785,9 +837,10 @@
 
   var currentFilter = new Set(); // 空 = すべて表示
   var currentTagFilter = null;
+  var currentStarFilter = 0; // 0=すべて 1/2/3=その星以上
   var currentView = 'grid';
   var currentLayout = localStorage.getItem('sakuhin-layout') || 'normal';
-  var currentSort = 'default'; // 'default' | 'name' | 'lastdate'
+  var currentSort = 'default';
   var tlMode = 'normal'; // 'normal' | 'important'
   var tlLayout = 'normal'; // 'normal' | 'zigzag'
   var importantIds = JSON.parse(localStorage.getItem('sakuhin-important') || '{}');
@@ -1062,6 +1115,9 @@
     if (currentTagFilter) {
       result = result.filter(function(x) { return (x.tags||[]).indexOf(currentTagFilter) !== -1; });
     }
+    if (currentStarFilter > 0) {
+      result = result.filter(function(x) { return (x.stars || 0) >= currentStarFilter; });
+    }
     return result;
   }
 
@@ -1085,6 +1141,10 @@
         var da = getLastDate(a), db = getLastDate(b);
         return da < db ? 1 : da > db ? -1 : 0;
       });
+    } else if (currentSort === 'stars_desc') {
+      copy.sort(function(a,b) { return (b.stars||0) - (a.stars||0); });
+    } else if (currentSort === 'stars_asc') {
+      copy.sort(function(a,b) { return (a.stars||0) - (b.stars||0); });
     }
     return copy;
   }
@@ -1480,6 +1540,27 @@
     if (currentView === 'grid') renderGrid(); else renderTimeline();
   });
 
+  // 星フィルター（タップで 0→1→2→3→0 と切り替え）
+  el('star-filter-btn').addEventListener('click', function() {
+    currentStarFilter = (currentStarFilter + 1) % 4;
+    var btn = el('star-filter-btn');
+    var labels = ['★', '★以上', '★★以上', '★★★'];
+    btn.textContent = labels[currentStarFilter];
+    btn.setAttribute('data-stars', currentStarFilter);
+    if (currentStarFilter > 0) {
+      btn.classList.add('active');
+      btn.style.background = '#d4920a';
+      btn.style.borderColor = '#d4920a';
+      btn.style.color = '#fff';
+    } else {
+      btn.classList.remove('active');
+      btn.style.background = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }
+    if (currentView === 'grid') renderGrid(); else renderTimeline();
+  });
+
   // ドロップダウン外クリックで閉じる
   document.addEventListener('click', function(e) {
     if (!el('tag-filter-btn').contains(e.target) && !el('tag-dropdown').contains(e.target)) {
@@ -1801,6 +1882,20 @@
     el('bulk-genre-dropdown').style.display = 'none';
   });
   el('bulk-genre-dropdown').addEventListener('click', function(e) { e.stopPropagation(); });
+
+  // スマホ用ツールバー展開
+  el('toolbar-expand-btn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    var panel = el('toolbar-collapsible');
+    var isOpen = panel.classList.toggle('open');
+    el('toolbar-expand-btn').textContent = isOpen ? '×' : '›';
+  });
+  document.addEventListener('click', function(e) {
+    if (!el('toolbar-collapsible').contains(e.target) && e.target !== el('toolbar-expand-btn')) {
+      el('toolbar-collapsible').classList.remove('open');
+      el('toolbar-expand-btn').textContent = '›';
+    }
+  });
 
   el('add-btn').addEventListener('click', function() { openModal(null); });
   el('modal-close-btn').addEventListener('click', closeModal);
