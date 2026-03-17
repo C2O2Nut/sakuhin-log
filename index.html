@@ -398,7 +398,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.2.7</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.2.9</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -424,7 +424,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.2.7</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.2.9</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -448,11 +448,13 @@
     </select>
     <div style="display:flex;border:1.5px solid var(--border);border-radius:4px;overflow:hidden;">
       <button class="layout-btn active" id="layout-normal-btn" title="通常表示" style="border-radius:0;border:none;border-right:1px solid var(--border);">▦</button>
-      <button class="layout-btn" id="layout-compact-btn" title="コンパクト" style="border-radius:0;border:none;border-right:1px solid var(--border);">⊞</button>
-      <button class="view-btn active" id="view-grid-btn" style="border-radius:0;border:none;border-right:1px solid var(--border);">カード</button>
-      <button class="view-btn" id="view-tl-btn" style="border-radius:0;border:none;border-right:1px solid var(--border);">年表</button>
-      <button class="view-btn" id="select-mode-btn" style="border-radius:0;border:none;">選択</button>
+      <button class="layout-btn" id="layout-compact-btn" title="コンパクト" style="border-radius:0;border:none;">⊞</button>
     </div>
+    <div style="display:flex;border:1.5px solid var(--border);border-radius:4px;overflow:hidden;">
+      <button class="view-btn active" id="view-grid-btn" style="border-radius:0;border:none;border-right:1px solid var(--border);">カード</button>
+      <button class="view-btn" id="view-tl-btn" style="border-radius:0;border:none;">年表</button>
+    </div>
+    <button class="view-btn" id="select-mode-btn">選択</button>
     <button class="add-btn" id="add-btn">＋ 追加</button>
   </div>
 </div>
@@ -462,6 +464,15 @@
   <span id="bulk-count">0 件選択中</span>
   <button class="bulk-btn" id="bulk-all-btn">全選択</button>
   <button class="bulk-btn" id="bulk-important-btn">重要に設定</button>
+  <div style="position:relative;">
+    <button class="bulk-btn" id="bulk-stars-btn">星変更</button>
+    <div id="bulk-stars-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:300;overflow:hidden;white-space:nowrap;">
+      <button class="dmenu-btn" data-stars="0">なし</button>
+      <button class="dmenu-btn" data-stars="1">★☆☆</button>
+      <button class="dmenu-btn" data-stars="2">★★☆</button>
+      <button class="dmenu-btn" data-stars="3">★★★</button>
+    </div>
+  </div>
   <div style="position:relative;">
     <button class="bulk-btn" id="bulk-color-btn">テーマカラー変更</button>
     <input type="color" id="bulk-color-input" value="#2a6e8c" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
@@ -1144,24 +1155,23 @@
       if (selectedIds.has(String(item.id))) card.classList.add('selected');
       grid.appendChild(card);
     });
-
-    // イベント委譲：選択モードとモーダルを切り替え
-    grid.addEventListener('click', function(e) {
-      var card = e.target.closest('.card');
-      if (!card) return;
-      var id = card.getAttribute('data-id');
-      if (!id) return;
-      if (selectMode) {
-        // 選択モード：選択トグル
-        if (selectedIds.has(id)) { selectedIds.delete(id); card.classList.remove('selected'); }
-        else { selectedIds.add(id); card.classList.add('selected'); }
-        updateBulkBar();
-      } else {
-        var numId = parseFloat(id);
-        openModal(isNaN(numId) ? id : numId);
-      }
-    });
   }
+
+  // gridのclickイベントは一度だけ登録（renderGridの外）
+  el('grid-view').addEventListener('click', function(e) {
+    var card = e.target.closest('.card');
+    if (!card) return;
+    var id = card.getAttribute('data-id');
+    if (!id) return;
+    if (selectMode) {
+      if (selectedIds.has(id)) { selectedIds.delete(id); card.classList.remove('selected'); }
+      else { selectedIds.add(id); card.classList.add('selected'); }
+      updateBulkBar();
+    } else {
+      var numId = parseFloat(id);
+      openModal(isNaN(numId) ? id : numId);
+    }
+  });
 
   // ===== 年表ビュー =====
   function renderTimeline() {
@@ -1672,17 +1682,17 @@
     el('bulk-bar').classList.add('show');
     el('add-btn').style.display = 'none';
     updateBulkBar();
-    renderGrid();
   }
 
   function exitSelectMode() {
     selectMode = false;
     selectedIds = new Set();
+    document.body.classList.remove('select-mode');
     applySelectBtn(false);
     el('bulk-bar').classList.remove('show');
     el('add-btn').style.display = '';
-    document.body.classList.remove('select-mode');
-    renderGrid();
+    // 選択状態のクラスをリセット
+    document.querySelectorAll('.card.selected').forEach(function(c) { c.classList.remove('selected'); });
   }
 
   function updateBulkBar() {
@@ -1740,6 +1750,30 @@
     showToast(selectedIds.size + ' 件の重要を' + (allImportant ? '解除' : '設定') + 'しました', 'success');
     exitSelectMode();
   });
+
+  // 一括星変更
+  el('bulk-stars-btn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (!selectedIds.size) { showToast('作品を選択してください', 'error'); return; }
+    var dd = el('bulk-stars-dropdown');
+    dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+  });
+  el('bulk-stars-dropdown').querySelectorAll('button[data-stars]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var stars = parseInt(btn.getAttribute('data-stars'));
+      selectedIds.forEach(function(id) {
+        for (var i = 0; i < items.length; i++) {
+          if (String(items[i].id) === String(id)) { items[i].stars = stars; break; }
+        }
+      });
+      saveData();
+      el('bulk-stars-dropdown').style.display = 'none';
+      showToast('星を変更: ' + selectedIds.size + ' 件', 'success');
+      exitSelectMode();
+      renderGrid();
+    });
+  });
+  document.addEventListener('click', function() { el('bulk-stars-dropdown').style.display = 'none'; });
 
   el('bulk-color-btn').addEventListener('click', function() {
     if (!selectedIds.size) { showToast('作品を選択してください', 'error'); return; }
