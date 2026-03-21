@@ -536,9 +536,22 @@
   @media (max-width: 600px) {
     .sm-action-btn { display: flex; }
     .pc-only-btn { display: none !important; }
-    /* スマホ時: ジャンルボタン・並び替え・タグ・星フィルターを非表示 */
-    #genre-scroll-area { display: none !important; }
+    /* スマホ時: ジャンルボタン個別を非表示・絞込ボタンだけ残す */
+    .genre-filter-item { display: none !important; }
+    #genre-filter-btns { display: none !important; }
     #sort-select { display: none !important; }
+    /* ツールバーright: セパレーターなし・均等配置 */
+    .toolbar-right {
+      border-left: none !important;
+      margin-left: 0 !important;
+      gap: 4px !important;
+    }
+    .toolbar {
+      justify-content: space-between;
+    }
+    #genre-scroll-area {
+      flex: 0 0 auto;
+    }
   }
   /* 編集ミニパネル */
   #edit-mini-panel {
@@ -579,6 +592,15 @@
   .filter-sheet-divider {
     border: none; border-top: 1px solid var(--border); margin: 4px 0 16px;
   }
+
+  /* ジャンルエリア内の絞り込みボタン: PCでは非表示、スマホで表示 */
+  .sm-filter-genre-btn {
+    display: none;
+    flex-shrink: 0;
+  }
+  @media (max-width: 600px) {
+    .sm-filter-genre-btn { display: flex; align-items: center; }
+  }
 </style>
 </head>
 <body>
@@ -590,7 +612,7 @@
 <header>
   <h1>作品ログ</h1>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.1.4</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.1.5</span>
     <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
   </div>
 </header>
@@ -611,7 +633,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.4</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.5</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -619,17 +641,18 @@
 <div class="toolbar">
   <!-- ジャンル・フィルター横スクロールエリア -->
   <div id="genre-scroll-area">
-    <button class="filter-btn active" data-genre="all">すべて</button>
+    <button class="sm-filter-genre-btn filter-btn" id="genre-filter-open-btn">絞込 ▾</button>
+    <button class="filter-btn active genre-filter-item" data-genre="all">すべて</button>
     <div id="genre-filter-btns" style="display:contents;"></div>
     <div style="position:relative;flex-shrink:0;">
-      <button class="filter-btn" id="tag-filter-btn">タグ</button>
+      <button class="filter-btn genre-filter-item" id="tag-filter-btn">タグ</button>
       <div id="tag-dropdown" style="display:none;position:fixed;top:60px;left:16px;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px var(--shadow);z-index:500;min-width:200px;max-width:280px;padding:10px 12px;">
         <div style="font-size:11px;color:var(--ink3);margin-bottom:8px;letter-spacing:0.05em;">タグで絞り込み</div>
         <div id="tag-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
         <button type="button" id="tag-clear-btn" style="margin-top:10px;font-size:11px;background:none;border:none;color:var(--ink3);cursor:pointer;padding:0;">絞り込みを解除</button>
       </div>
     </div>
-    <button class="filter-btn" id="star-filter-btn" data-stars="0" style="flex-shrink:0;">★</button>
+    <button class="filter-btn genre-filter-item" id="star-filter-btn" data-stars="0" style="flex-shrink:0;">★</button>
   </div>
   <!-- 右側固定ボタン群 -->
   <div class="toolbar-right">
@@ -645,7 +668,6 @@
 
     <button class="view-btn pc-only-btn" id="select-mode-btn">選択</button>
     <button class="add-btn pc-only-btn" id="add-btn">＋ 追加</button>
-    <button class="sm-action-btn" id="sm-filter-btn">絞込 ▾</button>
     <button class="sm-action-btn" id="sm-edit-btn">編集 ▾</button>
   </div>
 </div>
@@ -1072,7 +1094,7 @@
     genres.forEach(function(g) {
       var name = typeof g === 'string' ? g : g.name;
       var btn = document.createElement('button');
-      btn.className = 'filter-btn';
+      btn.className = 'filter-btn genre-filter-item';
       btn.setAttribute('data-genre', name);
       btn.textContent = name;
       btn.addEventListener('click', function() {
@@ -3404,7 +3426,7 @@
   });
 
   // 絞り込みボタン → シート
-  el('sm-filter-btn').addEventListener('click', function() {
+  el('genre-filter-open-btn').addEventListener('click', function() {
     renderFilterSheet();
     el('filter-sheet-modal').classList.add('open');
   });
