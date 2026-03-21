@@ -50,28 +50,8 @@
     flex-shrink: 0; padding-left: 8px;
     border-left: 1px solid var(--border); margin-left: 4px; height: 100%;
   }
-  /* スマホ用「…」ボタン */
-  #toolbar-more-btn {
-    display: none; padding: 0 11px; height: 34px; flex-shrink: 0;
-    background: var(--surface2); border: 1.5px solid var(--border);
-    border-radius: 4px; cursor: pointer; font-size: 18px; color: var(--ink2);
-    line-height: 1; align-items: center; justify-content: center;
-    margin-left: 8px;
-  }
-  /* スマホ用ドロップダウンパネル */
-  #toolbar-more-panel {
-    display: none; position: fixed; top: 52px; right: 0; left: 0; z-index: 150;
-    background: var(--surface); border-bottom: 2px solid var(--border);
-    padding: 12px 16px; gap: 10px; flex-direction: column;
-    box-shadow: 0 8px 24px var(--shadow);
-  }
-  #toolbar-more-panel.open { display: flex; }
-  #toolbar-more-panel .panel-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  #toolbar-expand-btn { display: none; }
-  #toolbar-collapsible { display: none; }
   @media (max-width: 700px) {
-    .toolbar-right { display: none; }
-    #toolbar-more-btn { display: flex; }
+    .toolbar-right { display: flex; }
   }
   .filter-btn {
     padding: 5px 12px; border: 1.5px solid var(--border); background: transparent;
@@ -477,8 +457,7 @@
   .add-type-btn:hover { border-color:var(--accent); }
   .add-type-btn .type-icon { font-size:24px; }
   .add-type-btn .type-name { font-size:12px; font-weight:500; color:var(--ink); }
-  /* スマホパネル */
-  #toolbar-more-panel { border-radius:0 0 16px 16px !important; }
+
 
   /* ドラッグ&ドロップ */
   .card.drag-over { outline: 3px solid var(--accent); outline-offset: 2px; transform: scale(1.03); }
@@ -550,7 +529,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.1.0</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.1.1</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -573,7 +552,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.0</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.1</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -608,28 +587,8 @@
     <button class="view-btn" id="select-mode-btn">選択</button>
     <button class="add-btn" id="add-btn">＋ 追加</button>
   </div>
-  <!-- スマホ用「…」ボタン -->
-  <button id="toolbar-more-btn" title="操作メニュー">…</button>
-  <button id="toolbar-expand-btn" style="display:none;">›</button>
-  <div id="toolbar-collapsible"></div>
 </div>
 
-<!-- スマホ用操作パネル -->
-<div id="toolbar-more-panel">
-  <div class="panel-row">
-    <select id="sort-select-m" style="padding:5px 8px;border:1.5px solid var(--border);border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:13px;background:var(--bg);color:var(--ink2);cursor:pointer;height:36px;">
-      <option value="default">登録順</option>
-      <option value="name">名前順</option>
-      <option value="lastdate">最終日順</option>
-      <option value="stars_desc">星↓</option>
-      <option value="stars_asc">星↑</option>
-    </select>
-    <button class="circle-btn active" id="layout-normal-btn-m" title="通常/コンパクト">▦</button>
-    <button class="circle-btn" id="group-by-genre-btn-m" title="ジャンル別">⊟</button>
-
-    <button class="view-btn" id="select-mode-btn-m">選択</button>
-    <button class="add-btn" id="add-btn-m">＋ 追加</button>
-  </div>
 </div>
 
 <!-- 一括操作バー -->
@@ -2303,17 +2262,7 @@
   });
   el('bulk-genre-dropdown').addEventListener('click', function(e) { e.stopPropagation(); });
 
-  // スマホ用ツールバー展開
-  // スマホ用「…」パネル
-  el('toolbar-more-btn').addEventListener('click', function(e) {
-    e.stopPropagation();
-    el('toolbar-more-panel').classList.toggle('open');
-  });
-  document.addEventListener('click', function(e) {
-    if (!el('toolbar-more-panel').contains(e.target) && e.target !== el('toolbar-more-btn')) {
-      el('toolbar-more-panel').classList.remove('open');
-    }
-  });
+
 
   // スマホパネルのボタンをPC側と同期
   function syncMobileBtns() {
@@ -2361,18 +2310,7 @@
     el('add-type-modal').classList.add('open');
   });
 
-  el('toolbar-expand-btn').addEventListener('click', function(e) {
-    e.stopPropagation();
-    var panel = el('toolbar-collapsible');
-    var isOpen = panel.classList.toggle('open');
-    el('toolbar-expand-btn').textContent = isOpen ? '×' : '›';
-  });
-  document.addEventListener('click', function(e) {
-    if (!el('toolbar-collapsible').contains(e.target) && e.target !== el('toolbar-expand-btn')) {
-      el('toolbar-collapsible').classList.remove('open');
-      el('toolbar-expand-btn').textContent = '›';
-    }
-  });
+
 
   el('add-btn').addEventListener('click', function() { el('add-type-modal').classList.add('open'); });
   el('modal-close-btn').addEventListener('click', closeModal);
