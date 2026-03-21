@@ -462,7 +462,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.0</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.1</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -488,7 +488,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.0</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.1</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -1164,6 +1164,11 @@
       el('btn-important').style.display = 'inline-block';
       updateImportantBtn(editingId);
       setStar(item.stars || 0);
+      // フォルダー復元
+      var parentFolder = items.find(function(f){
+        return f.cardType === 'folder' && (f.childIds||[]).indexOf(String(editingId)) !== -1;
+      });
+      refreshFolderSelect(parentFolder ? String(parentFolder.id) : '');
       if (item.photo) {
         photoData = item.photo;
         el('photo-preview').src = item.photo; el('photo-preview').style.display = 'block';
@@ -1183,8 +1188,9 @@
       el('f-memo').value = ''; el('btn-delete').style.display = 'none';
       el('btn-important').style.display = 'none';
       refreshFolderSelect('');
-    } else {
-      // 編集時: 所属フォルダーを復元
+    }
+    // 編集時: 所属フォルダーを復元
+    if (editingId !== null) {
       var parentFolder = items.find(function(f){
         return f.cardType === 'folder' && (f.childIds||[]).indexOf(String(editingId)) !== -1;
       });
