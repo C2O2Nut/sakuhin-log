@@ -506,13 +506,23 @@
   .bulk-folder-sheet h3 { font-family:'Noto Serif JP',serif; font-size:15px; margin-bottom:16px; color:var(--ink2); text-align:center; }
   .folder-choice-btn { display:block; width:100%; padding:12px 16px; background:none; border:1.5px solid var(--border); border-radius:8px; margin-bottom:8px; font-family:'Noto Sans JP',sans-serif; font-size:14px; color:var(--ink); cursor:pointer; text-align:left; transition:all 0.15s; }
   .folder-choice-btn:hover { border-color:var(--accent); background:var(--surface2); }
+
+  .folder-edit-btn {
+    position:absolute; top:6px; right:6px; z-index:4;
+    width:22px; height:22px; border-radius:50%;
+    background:rgba(0,0,0,0.55); border:none; color:#fff;
+    font-size:12px; cursor:pointer; display:flex;
+    align-items:center; justify-content:center;
+    pointer-events:all; transition:background 0.15s;
+  }
+  .folder-edit-btn:hover { background:var(--accent2); }
 </style>
 </head>
 <body>
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.6</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.7</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -535,7 +545,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.6</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.7</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -622,6 +632,7 @@
   </div>
   <button class="bulk-btn" id="bulk-add-folder-btn">フォルダーに追加</button>
   <button class="bulk-btn" id="bulk-remove-folder-btn" style="display:none;">フォルダーから外す</button>
+  <button class="bulk-btn danger" id="bulk-delete-btn">削除</button>
   <button class="bulk-btn danger" id="bulk-cancel-btn" style="margin-left:auto;">キャンセル</button>
 </div>
 
@@ -1492,6 +1503,12 @@
 
   // gridのclickイベントは一度だけ登録（renderGridの外）
   el('grid-view').addEventListener('click', function(e) {
+    // フォルダー編集ボタン
+    if (e.target.classList.contains('folder-edit-btn')) {
+      var fid = e.target.getAttribute('data-folder-id');
+      if (fid) openFolderModal(fid);
+      return;
+    }
     // 「外す」ボタン
     if (e.target.classList.contains('folder-remove-btn')) {
       var removeId = e.target.getAttribute('data-remove-id');
@@ -2093,6 +2110,24 @@
   });
 
   el('bulk-cancel-btn').addEventListener('click', function() { exitSelectMode(); });
+
+  // 選択削除
+  el('bulk-delete-btn').addEventListener('click', function() {
+    if (!selectedIds.size) { showToast('作品を選択してください', 'error'); return; }
+    if (!confirm(selectedIds.size + ' 件を削除しますか？この操作は元に戻せません。')) return;
+    var ids = Array.from(selectedIds);
+    // フォルダーのchildIdsからも除外
+    items.forEach(function(f) {
+      if (f.cardType === 'folder') {
+        f.childIds = (f.childIds||[]).filter(function(c){ return ids.indexOf(c) === -1; });
+      }
+    });
+    items = items.filter(function(x){ return !selectedIds.has(String(x.id)); });
+    saveData();
+    showToast(ids.length + ' 件を削除しました');
+    exitSelectMode();
+    renderGrid();
+  });
 
   el('bulk-all-btn').addEventListener('click', function() {
     var filtered = getFiltered();
@@ -3023,6 +3058,7 @@
     c.innerHTML='<div class="card-photo" style="position:relative;">'
       +'<div class="folder-grid">'+cells+'</div>'
       +(cids.length?'<span class="folder-count-badge">'+cids.length+'件</span>':'')
+      +'<button class="folder-edit-btn" data-folder-id="'+String(item.id)+'" title="編集">⚙</button>'
       +'</div>'
       +'<div class="card-body"><div class="card-title">📁 '+item.name+'</div>'
       +'<div class="card-stars">'+starsHTML(item.stars)+'</div>'
