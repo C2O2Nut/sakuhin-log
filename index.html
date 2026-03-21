@@ -1616,74 +1616,7 @@
       + '<style>body{font-family:sans-serif;background:#f5f0e8;padding:24px;max-width:900px;margin:0 auto;}h1{font-size:22px;margin-bottom:4px;}h2{font-family:monospace;color:#999;font-size:15px;margin:28px 0 8px;}</style>'
       + '</head><body><h1>作品ログ 年表</h1>'
       + '<p style="font-size:12px;color:#999;margin-bottom:20px;">出力日：' + new Date().toLocaleDateString('ja-JP') + ' / 全 ' + items.length + ' 件</p>'
-      + body + '
-<div id="bottom-nav">
-  <button class="nav-btn active" id="nav-list-btn"><span class="nav-icon">▦</span><span>一覧</span></button>
-  <button class="nav-btn" id="nav-home-btn"><span class="nav-icon">⌂</span><span>ホーム</span></button>
-  <button class="nav-btn" id="nav-tl-btn"><span class="nav-icon">≡</span><span>年表</span></button>
-</div>
-
-<div id="add-type-modal">
-  <div class="add-type-sheet">
-    <h3>何を追加しますか？</h3>
-    <div class="add-type-grid">
-      <button class="add-type-btn" id="add-type-normal"><span class="type-icon">📚</span><span class="type-name">作品</span></button>
-      <button class="add-type-btn" id="add-type-mood"><span class="type-icon">💭</span><span class="type-name">ムード</span></button>
-      <button class="add-type-btn" id="add-type-folder"><span class="type-icon">📁</span><span class="type-name">フォルダー</span></button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="mood-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="mood-modal-title">ムードを追加</h2>
-      <button class="modal-close" id="mood-modal-close">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-row"><label>タイトル（任意）</label><input type="text" id="mood-name" placeholder="例：夏の気分"></div>
-      <div class="form-row">
-        <label>カラー</label>
-        <input type="color" id="mood-color" value="#6a8cc4" style="height:40px;width:80px;padding:2px;border:1.5px solid var(--border);border-radius:4px;cursor:pointer;">
-      </div>
-      <div class="form-row"><label>期間</label><div id="mood-date-list"></div><button type="button" class="add-date-btn" id="mood-add-date-btn">＋ 期間を追加</button></div>
-      <div class="form-row"><label>メモ</label><textarea id="mood-memo" placeholder="そのときの気持ち…"></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn-delete" id="mood-delete-btn" style="display:none">削除</button>
-      <button type="button" class="btn-cancel" id="mood-cancel-btn">キャンセル</button>
-      <button type="button" class="btn-save" id="mood-save-btn">保存</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="folder-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="folder-modal-title">フォルダーを作成</h2>
-      <button class="modal-close" id="folder-modal-close">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-row"><label>フォルダー名 *</label><input type="text" id="folder-name-input" placeholder="例：スター・ウォーズシリーズ"></div>
-      <div class="form-row"><label>詳細</label><input type="text" id="folder-detail" placeholder="例：全3部作"></div>
-      <div class="form-row">
-        <label>おもしろさ</label>
-        <div class="star-input" id="folder-star-input">
-          <button type="button" data-val="1">☆</button>
-          <button type="button" data-val="2">☆</button>
-          <button type="button" data-val="3">☆</button>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn-delete" id="folder-delete-btn" style="display:none">削除</button>
-      <button type="button" class="btn-cancel" id="folder-cancel-btn">キャンセル</button>
-      <button type="button" class="btn-save" id="folder-save-btn">保存</button>
-    </div>
-  </div>
-</div>
-
-</body></html>';
+      + body + '</body></html>';
 
     var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
