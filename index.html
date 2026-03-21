@@ -437,7 +437,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.3.5</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v1.3.6</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -463,7 +463,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.3.5</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v1.3.6</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -871,6 +871,66 @@
   var currentStar = 0;
   var photoData = null;
   var memoPhotoData = null;
+
+
+  // ===== スマートマージ関数 =====
+  function smartMerge(existing, imported, cb) {
+    var added = 0, skipped = 0, memoMerged = 0;
+    var conflictQueue = []; // メモが全く違うもの
+
+    imported.forEach(function(imp) {
+      var idx = -1;
+      for (var i = 0; i < existing.length; i++) {
+        if (existing[i].name === imp.name) { idx = i; break; }
+      }
+      if (idx < 0) {
+        // 新規 → 追加
+        existing.unshift(imp);
+        added++;
+        return;
+      }
+      var ex = existing[idx];
+      // 重複あり → 星は上書きしない
+      // メモの処理
+      var exMemo = (ex.memo || '').trim();
+      var impMemo = (imp.memo || '').trim();
+      if (impMemo && impMemo !== exMemo) {
+        if (!exMemo) {
+          // 既存メモなし → そのまま追記
+          existing[idx] = Object.assign({}, ex, { memo: impMemo, stars: ex.stars });
+          memoMerged++;
+        } else if (impMemo.indexOf(exMemo) !== -1 || exMemo.indexOf(impMemo) !== -1) {
+          // 片方がもう一方を含む → 長い方を採用
+          var merged = impMemo.length > exMemo.length ? impMemo : exMemo;
+          existing[idx] = Object.assign({}, ex, { memo: merged, stars: ex.stars });
+          memoMerged++;
+        } else {
+          // 全く別の内容 → コンフリクトキューに積む
+          conflictQueue.push({ idx: idx, ex: ex, imp: imp, exMemo: exMemo, impMemo: impMemo });
+        }
+      }
+      skipped++;
+    });
+
+    // コンフリクト解決
+    function resolveNext() {
+      if (conflictQueue.length === 0) {
+        cb(added, skipped, memoMerged);
+        return;
+      }
+      var c = conflictQueue.shift();
+      var msg = '「' + c.ex.name + '」のメモが異なります。\n\n'
+        + '【現在】\n' + c.exMemo + '\n\n'
+        + '【インポート】\n' + c.impMemo + '\n\n'
+        + 'OKで「インポートを採用」、キャンセルで「現在のまま維持」';
+      if (confirm(msg)) {
+        existing[c.idx] = Object.assign({}, c.ex, { memo: c.impMemo, stars: c.ex.stars });
+        memoMerged++;
+      }
+      resolveNext();
+    }
+    resolveNext();
+  }
 
   function saveData() {
     try { localStorage.setItem('sakuhin-log', JSON.stringify(items)); } catch(e) {}
@@ -2060,19 +2120,12 @@
       try {
         var imported = JSON.parse(e.target.result);
         if (!Array.isArray(imported)) throw new Error('invalid');
-        if (!confirm(imported.length + ' 件をインポートします。重複タイトルは上書き、新規は追加されます。続けますか？')) return;
-        var added = 0, updated = 0;
-        imported.forEach(function(imp) {
-          var idx = -1;
-          for (var i = 0; i < items.length; i++) {
-            if (items[i].name === imp.name) { idx = i; break; }
-          }
-          if (idx >= 0) { items[idx] = imp; updated++; }
-          else { items.unshift(imp); added++; }
+        if (!confirm(imported.length + ' 件をインポートします。続けますか？')) return;
+        smartMerge(items, imported, function(added, skipped, memoMerged) {
+          saveData();
+          if (currentView === 'grid') renderGrid(); else renderTimeline();
+          showToast('追加 ' + added + ' 件・スキップ ' + skipped + ' 件', 'success');
         });
-        saveData();
-        if (currentView === 'grid') renderGrid(); else renderTimeline();
-        showToast('追加 ' + added + ' 件・更新 ' + updated + ' 件', 'success');
       } catch(err) {
         showToast('インポートに失敗しました', 'error');
       }
@@ -2194,20 +2247,13 @@
             });
 
             if (newItems.length === 0) { hideLoading(); showToast('インポートできる本が見つかりませんでした', 'error'); return; }
-            if (!confirm(newItems.length + ' 冊をインポートします。重複タイトルは上書き、新規は追加されます。続けますか？')) { hideLoading(); return; }
-            var added = 0, updated = 0;
-            newItems.forEach(function(imp) {
-              var idx = -1;
-              for (var i = 0; i < items.length; i++) {
-                if (items[i].name === imp.name) { idx = i; break; }
-              }
-              if (idx >= 0) { items[idx] = imp; updated++; }
-              else { items.unshift(imp); added++; }
+            if (!confirm(newItems.length + ' 冊をインポートします。続けますか？')) { hideLoading(); return; }
+            smartMerge(items, newItems, function(added, skipped, memoMerged) {
+              saveData();
+              if (currentView === 'grid') renderGrid(); else renderTimeline();
+              hideLoading();
+              showToast('追加 ' + added + ' 件・スキップ ' + skipped + ' 件', 'success');
             });
-            saveData();
-            if (currentView === 'grid') renderGrid(); else renderTimeline();
-            hideLoading();
-            showToast(newItems.length + ' 冊のインポート成功', 'success');
           });
         };
         document.head.appendChild(s2);
@@ -2638,10 +2684,12 @@
       if (!driveFileId) { driveSetStatus('Driveにデータが見つかりません'); return; }
       driveLoadRaw(function(loaded) {
         if (!loaded) { driveSetStatus('読み込み失敗'); return; }
-        if (!confirm('Driveのデータ（' + loaded.length + ' 件）で上書きしますか？')) { driveSetStatus(''); return; }
-        items = loaded; _origSaveData();
-        if (currentView === 'grid') renderGrid(); else renderTimeline();
-        driveSetStatus('読み込み完了: ' + loaded.length + ' 件');
+        if (!confirm('Driveのデータ（' + loaded.length + ' 件）をマージしますか？\n重複は上書きせず、新規のみ追加されます。')) { driveSetStatus(''); return; }
+        smartMerge(items, loaded, function(added, skipped, memoMerged) {
+          _origSaveData();
+          if (currentView === 'grid') renderGrid(); else renderTimeline();
+          driveSetStatus('マージ完了: 追加 ' + added + ' 件・スキップ ' + skipped + ' 件');
+        });
       });
     });
   });
