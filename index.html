@@ -523,17 +523,76 @@
     font-family: 'DM Mono', monospace; font-size: 11px;
     color: var(--ink3); font-weight: 400;
   }
+
+  /* スマホ用編集・絞り込みボタン（狭い画面のみ表示） */
+  .sm-action-btn {
+    display: none;
+    padding: 0 12px; height: 34px; border-radius: 17px;
+    border: 1.5px solid var(--border); background: var(--surface2);
+    font-family: 'Noto Sans JP', sans-serif; font-size: 12px;
+    color: var(--ink2); cursor: pointer; white-space: nowrap;
+    flex-shrink: 0; align-items: center; gap: 4px;
+  }
+  @media (max-width: 600px) {
+    .sm-action-btn { display: flex; }
+    .pc-only-btn { display: none !important; }
+    /* スマホ時: ジャンルボタン・並び替え・タグ・星フィルターを非表示 */
+    #genre-scroll-area { display: none !important; }
+    #sort-select { display: none !important; }
+  }
+  /* 編集ミニパネル */
+  #edit-mini-panel {
+    display: none; position: fixed; z-index: 250;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 8px;
+    box-shadow: 0 4px 20px var(--shadow);
+    flex-direction: column; gap: 6px; min-width: 120px;
+  }
+  #edit-mini-panel.open { display: flex; }
+  .edit-mini-btn {
+    padding: 10px 16px; border-radius: 8px; border: none;
+    background: var(--surface2); font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px; color: var(--ink); cursor: pointer;
+    text-align: center; transition: background 0.15s;
+  }
+  .edit-mini-btn:hover { background: var(--border); }
+  /* 絞り込みシート */
+  #filter-sheet-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 300;
+    align-items: flex-end; justify-content: center;
+  }
+  #filter-sheet-modal.open { display: flex; }
+  .filter-sheet {
+    background: var(--surface); border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 500px;
+    padding: 20px 20px 40px; max-height: 80vh; overflow-y: auto;
+  }
+  .filter-sheet-title {
+    font-family: 'Noto Serif JP', serif; font-size: 14px;
+    color: var(--ink3); margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .filter-sheet-row {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+  }
+  .filter-sheet-divider {
+    border: none; border-top: 1px solid var(--border); margin: 4px 0 16px;
+  }
 </style>
 </head>
 <body>
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.1.2</div>
+
 
 <header>
   <h1>作品ログ</h1>
-  <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.1.4</span>
+    <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
+  </div>
 </header>
 
 <!-- データメニュー -->
@@ -552,7 +611,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.2</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.4</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -564,7 +623,7 @@
     <div id="genre-filter-btns" style="display:contents;"></div>
     <div style="position:relative;flex-shrink:0;">
       <button class="filter-btn" id="tag-filter-btn">タグ</button>
-      <div id="tag-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px var(--shadow);z-index:200;min-width:200px;max-width:280px;padding:10px 12px;">
+      <div id="tag-dropdown" style="display:none;position:fixed;top:60px;left:16px;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px var(--shadow);z-index:500;min-width:200px;max-width:280px;padding:10px 12px;">
         <div style="font-size:11px;color:var(--ink3);margin-bottom:8px;letter-spacing:0.05em;">タグで絞り込み</div>
         <div id="tag-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
         <button type="button" id="tag-clear-btn" style="margin-top:10px;font-size:11px;background:none;border:none;color:var(--ink3);cursor:pointer;padding:0;">絞り込みを解除</button>
@@ -584,8 +643,10 @@
     <button class="circle-btn active" id="layout-normal-btn" title="通常表示">▦</button>
     <button class="circle-btn" id="group-by-genre-btn" title="ジャンル別表示">⊟</button>
 
-    <button class="view-btn" id="select-mode-btn">選択</button>
-    <button class="add-btn" id="add-btn">＋ 追加</button>
+    <button class="view-btn pc-only-btn" id="select-mode-btn">選択</button>
+    <button class="add-btn pc-only-btn" id="add-btn">＋ 追加</button>
+    <button class="sm-action-btn" id="sm-filter-btn">絞込 ▾</button>
+    <button class="sm-action-btn" id="sm-edit-btn">編集 ▾</button>
   </div>
 </div>
 
@@ -863,6 +924,39 @@
 </div>
 
 <!-- ========== v3 HTML ========== -->
+<!-- 編集ミニパネル -->
+<div id="edit-mini-panel">
+  <button class="edit-mini-btn" id="sm-add-btn">＋ 追加</button>
+  <button class="edit-mini-btn" id="sm-select-btn">選択</button>
+</div>
+
+<!-- 絞り込みシート -->
+<div id="filter-sheet-modal">
+  <div class="filter-sheet">
+    <div class="filter-sheet-title">ジャンル</div>
+    <div class="filter-sheet-row" id="fs-genre-row">
+      <button class="filter-btn active" data-genre="all" id="fs-all-btn">すべて</button>
+      <!-- ジャンルボタンはJSで生成 -->
+    </div>
+    <hr class="filter-sheet-divider">
+    <div class="filter-sheet-title">タグ</div>
+    <div class="filter-sheet-row" id="fs-tag-row">
+      <!-- タグはJSで生成 -->
+    </div>
+    <hr class="filter-sheet-divider">
+    <div class="filter-sheet-title">並び替え</div>
+    <div class="filter-sheet-row">
+      <button class="filter-btn" data-sort="default" id="fs-sort-default">登録順</button>
+      <button class="filter-btn" data-sort="name" id="fs-sort-name">名前順</button>
+      <button class="filter-btn" data-sort="lastdate" id="fs-sort-lastdate">最終日順</button>
+      <button class="filter-btn" data-sort="stars_desc" id="fs-sort-stars-desc">★ 多い順</button>
+      <button class="filter-btn" data-sort="stars_asc" id="fs-sort-stars-asc">★ 少ない順</button>
+    </div>
+    <hr class="filter-sheet-divider">
+    <button class="filter-btn" id="fs-close-btn" style="width:100%;justify-content:center;padding:10px;">閉じる</button>
+  </div>
+</div>
+
 <div id="bottom-nav">
   <button class="nav-btn active" id="nav-list-btn"><span class="nav-icon">▦</span><span>一覧</span></button>
   <button class="nav-btn" id="nav-home-btn"><span class="nav-icon">⌂</span><span>ホーム</span></button>
@@ -1903,6 +1997,9 @@
     var dd = el('tag-dropdown');
     if (dd.style.display === 'none') {
       renderTagDropdown();
+      var rect = el('tag-filter-btn').getBoundingClientRect();
+      dd.style.top = (rect.bottom + 6) + 'px';
+      dd.style.left = Math.max(8, rect.left) + 'px';
       dd.style.display = 'block';
     } else {
       dd.style.display = 'none';
@@ -3277,6 +3374,153 @@
   // v3 イベント登録
   // ============================================================
   el('nav-list-btn').addEventListener('click', function(){ setPage('list'); });
+
+  // ===== スマホ用編集・絞り込みボタン =====
+
+  // 編集ボタン → ミニパネル
+  el('sm-edit-btn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    var panel = el('edit-mini-panel');
+    var btn = el('sm-edit-btn');
+    var rect = btn.getBoundingClientRect();
+    panel.style.top = (rect.bottom + 6) + 'px';
+    panel.style.right = (window.innerWidth - rect.right) + 'px';
+    panel.classList.toggle('open');
+  });
+  document.addEventListener('click', function(e) {
+    if (!el('edit-mini-panel').contains(e.target) && e.target !== el('sm-edit-btn')) {
+      el('edit-mini-panel').classList.remove('open');
+    }
+  });
+
+  // ミニパネルの追加・選択
+  el('sm-add-btn').addEventListener('click', function() {
+    el('edit-mini-panel').classList.remove('open');
+    el('add-type-modal').classList.add('open');
+  });
+  el('sm-select-btn').addEventListener('click', function() {
+    el('edit-mini-panel').classList.remove('open');
+    if (selectMode) exitSelectMode(); else enterSelectMode();
+  });
+
+  // 絞り込みボタン → シート
+  el('sm-filter-btn').addEventListener('click', function() {
+    renderFilterSheet();
+    el('filter-sheet-modal').classList.add('open');
+  });
+  el('filter-sheet-modal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+  el('fs-close-btn').addEventListener('click', function() {
+    el('filter-sheet-modal').classList.remove('open');
+  });
+
+  // シート内の並び替えボタン
+  ['default','name','lastdate','stars_desc','stars_asc'].forEach(function(s) {
+    var id = 'fs-sort-' + s.replace('_','-');
+    var b = el(id); if (!b) return;
+    b.addEventListener('click', function() {
+      currentSort = s;
+      el('sort-select').value = s;
+      // アクティブ状態更新
+      ['default','name','lastdate','stars_desc','stars_asc'].forEach(function(ss) {
+        var bb = el('fs-sort-' + ss.replace('_','-'));
+        if (bb) bb.classList.toggle('active', ss === s);
+      });
+      if (currentView === 'grid') renderGrid(); else renderTimeline();
+    });
+  });
+
+  // シート内のジャンルボタンを生成する関数
+  function renderFilterSheet() {
+    var row = el('fs-genre-row');
+    row.innerHTML = '';
+    // すべてボタン
+    var allBtn = document.createElement('button');
+    allBtn.className = 'filter-btn' + (currentFilter.size === 0 ? ' active' : '');
+    allBtn.textContent = 'すべて';
+    allBtn.addEventListener('click', function() {
+      currentFilter = new Set();
+      updateFilterBtns();
+      renderFilterSheet();
+      if (currentView === 'grid') renderGrid(); else renderTimeline();
+    });
+    row.appendChild(allBtn);
+    // 各ジャンル
+    getAllGenres().forEach(function(g) {
+      var name = typeof g === 'string' ? g : g.name;
+      var btn = document.createElement('button');
+      btn.className = 'filter-btn' + (currentFilter.has(name) ? ' active' : '');
+      btn.textContent = name;
+      btn.addEventListener('click', function() {
+        if (currentFilter.has(name)) currentFilter.delete(name);
+        else currentFilter.add(name);
+        updateFilterBtns();
+        renderFilterSheet();
+        if (currentView === 'grid') renderGrid(); else renderTimeline();
+      });
+      row.appendChild(btn);
+    });
+    // タグ絞り込みも追加
+    if (currentTagFilter) {
+      var tagBtn = document.createElement('button');
+      tagBtn.className = 'filter-btn active';
+      tagBtn.textContent = '#' + currentTagFilter + ' ×';
+      tagBtn.style.background = 'var(--accent)';
+      tagBtn.style.color = '#fff';
+      tagBtn.addEventListener('click', function() {
+        currentTagFilter = null;
+        updateFilterBtns();
+        renderFilterSheet();
+        if (currentView === 'grid') renderGrid(); else renderTimeline();
+      });
+      row.appendChild(tagBtn);
+    }
+    // タグ一覧
+    var tagRow = el('fs-tag-row');
+    if (tagRow) {
+      tagRow.innerHTML = '';
+      var tags = getAllTags();
+      if (tags.length === 0) {
+        tagRow.innerHTML = '<span style="font-size:12px;color:var(--ink3);">タグがありません</span>';
+      } else {
+        tags.forEach(function(t) {
+          var btn = document.createElement('button');
+          btn.className = 'filter-btn' + (currentTagFilter === t.tag ? ' active' : '');
+          if (currentTagFilter === t.tag) {
+            btn.style.background = 'var(--ink)';
+            btn.style.color = 'var(--bg)';
+            btn.style.borderColor = 'var(--ink)';
+          }
+          btn.textContent = '#' + t.tag + ' ' + t.count;
+          btn.addEventListener('click', function() {
+            if (currentTagFilter === t.tag) {
+              currentTagFilter = null;
+              el('tag-filter-btn').classList.remove('active');
+              el('tag-filter-btn').style.background = '';
+              el('tag-filter-btn').style.color = '';
+              el('tag-filter-btn').style.borderColor = '';
+            } else {
+              currentTagFilter = t.tag;
+              el('tag-filter-btn').classList.add('active');
+              el('tag-filter-btn').style.background = 'var(--ink)';
+              el('tag-filter-btn').style.color = 'var(--bg)';
+              el('tag-filter-btn').style.borderColor = 'var(--ink)';
+            }
+            updateFilterBtns();
+            renderFilterSheet();
+            if (currentView === 'grid') renderGrid(); else renderTimeline();
+          });
+          tagRow.appendChild(btn);
+        });
+      }
+    }
+    // 並び替えボタンのアクティブ状態も更新
+    ['default','name','lastdate','stars_desc','stars_asc'].forEach(function(s) {
+      var b = el('fs-sort-' + s.replace('_','-'));
+      if (b) b.classList.toggle('active', currentSort === s);
+    });
+  }
 
   // ジャンルグループ切替
   function applyGroupBtn() {
