@@ -984,6 +984,11 @@
   var currentStar = 0;
   var photoData = null;
   var memoPhotoData = null;
+  // v3.0.0
+  var currentFolderId = null;
+  var moodEditingId = null;
+  var folderEditingId = null;
+  var folderStar = 0;
 
 
   // ===== スマートマージ関数 =====
@@ -1943,16 +1948,12 @@
   });
 
   el('view-grid-btn').addEventListener('click', function() {
-    currentView = 'grid';
+    setPage('list');
     applyViewBtns('grid');
-    el('grid-view').style.display = 'grid'; el('timeline-view').style.display = 'none';
-    renderGrid();
   });
   el('view-tl-btn').addEventListener('click', function() {
-    currentView = 'timeline';
+    setPage('timeline');
     applyViewBtns('timeline');
-    el('grid-view').style.display = 'none'; el('timeline-view').style.display = 'block';
-    renderTimeline();
   });
 
   // 並び替え
@@ -3043,11 +3044,6 @@
   renderGrid();
 
   // ===== v3.0.0 新機能 =====
-  var currentFolderId = null;
-  var moodEditingId = null;
-  var folderEditingId = null;
-  var folderStar = 0;
-
   // ===== ナビゲーション =====
   function setPage(page) {
     ['nav-list-btn','nav-home-btn','nav-tl-btn'].forEach(function(id){ el(id).classList.remove('active'); });
@@ -3058,8 +3054,10 @@
 
     if (page === 'list') {
       el('nav-list-btn').classList.add('active');
-      el('grid-view').style.display = 'grid';
-      currentView = 'grid'; renderGrid();
+      el('grid-view').style.display = '';
+      currentView = 'grid';
+      applyViewBtns('grid');
+      renderGrid();
     } else if (page === 'home') {
       el('nav-home-btn').classList.add('active');
       el('home-view').style.display = 'block';
@@ -3067,7 +3065,9 @@
     } else if (page === 'timeline') {
       el('nav-tl-btn').classList.add('active');
       el('timeline-view').style.display = 'block';
-      currentView = 'timeline'; renderTimeline();
+      currentView = 'timeline';
+      applyViewBtns('timeline');
+      renderTimeline();
     }
   }
 
@@ -3075,9 +3075,7 @@
   el('nav-home-btn').addEventListener('click', function(){ setPage('home'); });
   el('nav-tl-btn').addEventListener('click', function(){ setPage('timeline'); });
 
-  // 既存の年表・カードビューボタンをナビと連動
-  el('view-grid-btn').addEventListener('click', function(){ setPage('list'); });
-  el('view-tl-btn').addEventListener('click', function(){ setPage('timeline'); });
+  // ナビと既存ボタンの連動はsetPage内で処理
 
   // ===== 追加ボタン → タイプ選択シート =====
   el('add-btn').addEventListener('click', function(){
