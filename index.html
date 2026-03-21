@@ -522,7 +522,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.7</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.8</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -545,7 +545,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.7</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.8</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -926,6 +926,15 @@
     <div class="modal-body">
       <div class="form-row"><label>フォルダー名 *</label><input type="text" id="folder-name-input" placeholder="例：スター・ウォーズシリーズ"></div>
       <div class="form-row"><label>詳細</label><input type="text" id="folder-detail" placeholder="例：全3部作"></div>
+      <div class="form-row">
+        <label>カバー画像（任意）</label>
+        <div class="photo-upload" id="folder-cover-upload">
+          <img id="folder-cover-preview" class="photo-preview" alt="">
+          <div id="folder-cover-placeholder">クリックして画像を選択（未設定の場合は中身を自動表示）</div>
+          <input type="file" id="folder-cover-file" accept="image/*">
+        </div>
+        <button type="button" id="folder-cover-clear" style="display:none;margin-top:5px;font-size:12px;background:none;border:none;color:#c94a2a;cursor:pointer;">カバー画像を削除</button>
+      </div>
       <div class="form-row"><label>おもしろさ</label>
         <div class="star-input" id="folder-star-input">
           <button type="button" data-val="1">☆</button>
@@ -3047,16 +3056,51 @@
   function makeFolderCard(item) {
     var cids=item.childIds||[];
     var citems=cids.map(function(id){return items.find(function(x){return String(x.id)===String(id);});}).filter(Boolean).slice(0,4);
-    var cells='';
-    for(var i=0;i<4;i++){
-      var ci=citems[i];
-      if(ci&&ci.photo) cells+='<div class="folder-grid-cell"><img src="'+ci.photo+'" alt=""></div>';
-      else if(ci) cells+='<div class="folder-grid-cell">'+genreIcon(ci.genre)+'</div>';
-      else cells+='<div class="folder-grid-cell" style="background:var(--border);"></div>';
-    }
     var c=document.createElement('div'); c.className='card folder-card';
+    var photoEl='';
+    var coverImg = item.coverPhoto || null;
+    if (coverImg) {
+      // カスタムカバー画像
+      photoEl = '<img src="'+coverImg+'" style="width:100%;height:100%;object-fit:cover;" alt="">';
+    } else if (citems.length === 0) {
+      photoEl = '<div style="width:100%;height:100%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:32px;">📁</div>';
+    } else if (citems.length === 1) {
+      var ci=citems[0];
+      photoEl = ci.photo
+        ? '<img src="'+ci.photo+'" style="width:100%;height:100%;object-fit:cover;" alt="">'
+        : '<div style="width:100%;height:100%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:40px;">'+genreIcon(ci.genre)+'</div>';
+    } else if (citems.length === 2) {
+      var makeCell2 = function(ci) {
+        return ci.photo
+          ? '<div style="flex:1;overflow:hidden;"><img src="'+ci.photo+'" style="width:100%;height:100%;object-fit:cover;" alt=""></div>'
+          : '<div style="flex:1;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:28px;">'+genreIcon(ci.genre)+'</div>';
+      };
+      photoEl = '<div style="display:flex;flex-direction:column;width:100%;height:100%;gap:1px;background:var(--border);">'
+        + makeCell2(citems[0]) + makeCell2(citems[1]) + '</div>';
+    } else if (citems.length === 3) {
+      var makeCell3 = function(ci, style) {
+        return ci.photo
+          ? '<div style="'+style+';overflow:hidden;"><img src="'+ci.photo+'" style="width:100%;height:100%;object-fit:cover;" alt=""></div>'
+          : '<div style="'+style+';background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:24px;">'+genreIcon(ci.genre)+'</div>';
+      };
+      photoEl = '<div style="display:flex;flex-direction:column;width:100%;height:100%;gap:1px;background:var(--border);">'
+        + '<div style="display:flex;flex:1;gap:1px;">'
+        + makeCell3(citems[0],'flex:1') + makeCell3(citems[1],'flex:1')
+        + '</div>'
+        + makeCell3(citems[2],'flex:1.4')
+        + '</div>';
+    } else {
+      var cells='';
+      for(var i=0;i<4;i++){
+        var ci=citems[i];
+        if(ci&&ci.photo) cells+='<div class="folder-grid-cell"><img src="'+ci.photo+'" alt=""></div>';
+        else if(ci) cells+='<div class="folder-grid-cell">'+genreIcon(ci.genre)+'</div>';
+        else cells+='<div class="folder-grid-cell" style="background:var(--border);"></div>';
+      }
+      photoEl = '<div class="folder-grid">'+cells+'</div>';
+    }
     c.innerHTML='<div class="card-photo" style="position:relative;">'
-      +'<div class="folder-grid">'+cells+'</div>'
+      +photoEl
       +(cids.length?'<span class="folder-count-badge">'+cids.length+'件</span>':'')
       +'<button class="folder-edit-btn" data-folder-id="'+String(item.id)+'" title="編集">⚙</button>'
       +'</div>'
@@ -3147,13 +3191,29 @@
     document.querySelectorAll('#folder-star-input button').forEach(function(b,i){b.textContent=i<val?'★':'☆'; b.style.color=i<val?'#d4920a':'#aaa';});
   }
 
+  var folderCoverData = null;
   function openFolderModal(id) {
     folderEditingId=id||null;
+    folderCoverData=null;
     var item=id?items.find(function(x){return String(x.id)===String(id);}):null;
     el('folder-modal-title').textContent=item?'フォルダーを編集':'フォルダーを作成';
     el('folder-name-input').value=item?item.name:'';
     el('folder-detail').value=item?(item.detail||''):'';
     setFolderStar(item?(item.stars||0):0);
+    // カバー画像
+    if (item && item.coverPhoto) {
+      folderCoverData = item.coverPhoto;
+      el('folder-cover-preview').src = item.coverPhoto;
+      el('folder-cover-preview').style.display = 'block';
+      el('folder-cover-placeholder').style.display = 'none';
+      el('folder-cover-clear').style.display = 'block';
+    } else {
+      el('folder-cover-preview').src = '';
+      el('folder-cover-preview').style.display = 'none';
+      el('folder-cover-placeholder').style.display = 'block';
+      el('folder-cover-clear').style.display = 'none';
+    }
+    el('folder-cover-file').value = '';
     el('folder-delete-btn').style.display=item?'inline-block':'none';
     el('folder-modal').classList.add('open');
   }
@@ -3162,7 +3222,7 @@
     var name=el('folder-name-input').value.trim();
     if(!name){showToast('フォルダー名を入力してください','error');return;}
     var ex=folderEditingId?items.find(function(x){return String(x.id)===String(folderEditingId);}):null;
-    var item={id:folderEditingId||Date.now(),cardType:'folder',name:name,detail:el('folder-detail').value.trim(),stars:folderStar,childIds:ex?(ex.childIds||[]):[],updatedAt:Date.now()};
+    var item={id:folderEditingId||Date.now(),cardType:'folder',name:name,detail:el('folder-detail').value.trim(),stars:folderStar,childIds:ex?(ex.childIds||[]):[],coverPhoto:folderCoverData||null,updatedAt:Date.now()};
     if(folderEditingId){for(var i=0;i<items.length;i++){if(String(items[i].id)===String(folderEditingId)){items[i]=item;break;}}}
     else items.unshift(item);
     saveData(); el('folder-modal').classList.remove('open'); refreshFolderSelect(''); renderGrid();
@@ -3206,6 +3266,26 @@
     saveData(); el('mood-modal').classList.remove('open'); renderGrid(); showToast('削除しました');
   });
 
+  el('folder-cover-file').addEventListener('change', function() {
+    var file = this.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      folderCoverData = e.target.result;
+      el('folder-cover-preview').src = folderCoverData;
+      el('folder-cover-preview').style.display = 'block';
+      el('folder-cover-placeholder').style.display = 'none';
+      el('folder-cover-clear').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+  el('folder-cover-clear').addEventListener('click', function() {
+    folderCoverData = null;
+    el('folder-cover-preview').src = '';
+    el('folder-cover-preview').style.display = 'none';
+    el('folder-cover-placeholder').style.display = 'block';
+    el('folder-cover-clear').style.display = 'none';
+    el('folder-cover-file').value = '';
+  });
   el('folder-modal-close').addEventListener('click', function(){ el('folder-modal').classList.remove('open'); });
   el('folder-cancel-btn').addEventListener('click', function(){ el('folder-modal').classList.remove('open'); });
   el('folder-save-btn').addEventListener('click', saveFolderItem);
