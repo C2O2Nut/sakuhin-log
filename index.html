@@ -516,13 +516,41 @@
     pointer-events:all; transition:background 0.15s;
   }
   .folder-edit-btn:hover { background:var(--accent2); }
+
+  /* 円形トグルボタン */
+  .circle-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1.5px solid var(--border); background: transparent;
+    color: var(--ink2); cursor: pointer; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .circle-btn:hover { background: var(--surface2); }
+  .circle-btn.active { background: var(--ink2); color: #fff; border-color: var(--ink2); }
+  /* ジャンルグループヘッダー */
+  .genre-group-header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px 0 6px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 15px; font-weight: 700; color: var(--ink2);
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 2px;
+  }
+  .genre-group-header .genre-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .genre-group-count {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--ink3); font-weight: 400;
+  }
 </style>
 </head>
 <body>
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.9</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.1.0</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -545,7 +573,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.9</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.0</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -574,10 +602,8 @@
       <option value="stars_desc">星↓</option>
       <option value="stars_asc">星↑</option>
     </select>
-    <div style="display:flex;border:1.5px solid var(--border);border-radius:4px;overflow:hidden;">
-      <button class="layout-btn active" id="layout-normal-btn" title="通常表示" style="border-radius:0;border:none;border-right:1px solid var(--border);">▦</button>
-      <button class="layout-btn" id="layout-compact-btn" title="コンパクト" style="border-radius:0;border:none;">⊞</button>
-    </div>
+    <button class="circle-btn active" id="layout-normal-btn" title="通常表示">▦</button>
+    <button class="circle-btn" id="group-by-genre-btn" title="ジャンル別表示">⊟</button>
 
     <button class="view-btn" id="select-mode-btn">選択</button>
     <button class="add-btn" id="add-btn">＋ 追加</button>
@@ -598,10 +624,8 @@
       <option value="stars_desc">星↓</option>
       <option value="stars_asc">星↑</option>
     </select>
-    <div style="display:flex;border:1.5px solid var(--border);border-radius:4px;overflow:hidden;">
-      <button class="layout-btn active" id="layout-normal-btn-m" style="border-radius:0;border:none;border-right:1px solid var(--border);">▦</button>
-      <button class="layout-btn" id="layout-compact-btn-m" style="border-radius:0;border:none;">⊞</button>
-    </div>
+    <button class="circle-btn active" id="layout-normal-btn-m" title="通常/コンパクト">▦</button>
+    <button class="circle-btn" id="group-by-genre-btn-m" title="ジャンル別">⊟</button>
 
     <button class="view-btn" id="select-mode-btn-m">選択</button>
     <button class="add-btn" id="add-btn-m">＋ 追加</button>
@@ -1040,6 +1064,7 @@
   var memoPhotoData = null;
   // v3変数
   var currentPage = 'list';
+  var groupByGenre = false;
   var currentFolderId = null;
   var moodEditingId = null;
   var folderEditingId = null;
@@ -1451,6 +1476,29 @@
     }
 
     grid.innerHTML = '';
+
+    // ジャンル別グループ表示
+    if (groupByGenre && !currentFolderId) {
+      var groups = {};
+      var groupOrder = [];
+      filtered.forEach(function(item) {
+        var g = item.cardType === 'mood' ? 'ムード' : item.cardType === 'folder' ? 'フォルダー' : (item.genre || 'その他');
+        if (!groups[g]) { groups[g] = []; groupOrder.push(g); }
+        groups[g].push(item);
+      });
+      groupOrder.forEach(function(genre) {
+        var header = document.createElement('div');
+        header.className = 'genre-group-header';
+        var color = genreDefaultColor(genre);
+        header.innerHTML = '<span class="genre-dot" style="background:' + color + '"></span>'
+          + genre
+          + '<span class="genre-group-count">(' + groups[genre].length + ')</span>';
+        grid.appendChild(header);
+        groups[genre].forEach(function(item) { appendCard(item, grid); });
+      });
+      return;
+    }
+
     filtered.forEach(function(item) {
       var dates = getItemDates(item);
       var datesHTML = dates.map(function(d, i) {
@@ -1491,7 +1539,6 @@
       } // end else
       card.setAttribute('data-id', String(item.id));
       card.setAttribute('draggable', 'true');
-      // フォルダー内表示時: 「外す」ボタン追加
       if (currentFolderId) {
         var removeBtn = document.createElement('button');
         removeBtn.className = 'folder-remove-btn';
@@ -1500,15 +1547,55 @@
         removeBtn.setAttribute('data-remove-id', String(item.id));
         card.appendChild(removeBtn);
       }
-      // 選択チェックマーク
       var check = document.createElement('div');
       check.className = 'select-check';
       check.textContent = '✓';
       card.appendChild(check);
-      // 選択状態を反映
       if (selectedIds.has(String(item.id))) card.classList.add('selected');
       grid.appendChild(card);
     });
+  }
+
+  // カード1枚をgridに追加するヘルパー（ジャンルグループ用）
+  function appendCard(item, grid) {
+    var dates = getItemDates(item);
+    var datesHTML = dates.map(function(d, i) {
+      var isMonth = d.mode === 'month';
+      var fmt = function(v) { if (!v) return '?'; return isMonth ? v.slice(0,7) : v; };
+      return '<div class="card-dates">' + (i > 0 ? '再: ' : '') + fmt(d.start) + ' 〜 ' + fmt(d.end) + '</div>';
+    }).join('');
+    var tagsHTML = (item.tags||[]).map(function(t) { return '<span class="tag">' + t + '</span>'; }).join('');
+    var typeStr = item.type ? ' / ' + item.type : '';
+    var status = item.status || '完了';
+    var card;
+    if (item.cardType==='mood') { card=makeMoodCard(item); }
+    else if (item.cardType==='folder') { card=makeFolderCard(item); }
+    else {
+      card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = '<div class="card-photo">'
+        + (item.photo
+          ? '<img src="' + item.photo + '" alt="">'
+          : '<span style="font-size:52px">' + genreIcon(item.genre) + '</span>'
+            + '<div class="card-photo-placeholder">' + item.genre + (item.type ? '<br><span style="font-size:9px;opacity:0.7">' + item.type + '</span>' : '') + '</div>')
+        + '<span class="card-genre-badge" style="background:' + genreDefaultColor(item.genre) + '">' + item.genre + typeStr + '</span>'
+        + '<span class="status-dot ' + status + '" title="' + status + '"></span>'
+        + '</div>'
+        + '<div class="card-body">'
+        + '<div class="card-title">' + item.name + '</div>'
+        + '<div class="card-stars">' + starsHTML(item.stars) + '</div>'
+        + (tagsHTML ? '<div class="card-tags">' + tagsHTML + '</div>' : '')
+        + datesHTML
+        + (item.memo ? '<div class="card-memo">' + item.memo + '</div>' : '')
+        + '</div>';
+    }
+    card.setAttribute('data-id', String(item.id));
+    card.setAttribute('draggable', 'true');
+    var check = document.createElement('div');
+    check.className = 'select-check'; check.textContent = '✓';
+    card.appendChild(check);
+    if (selectedIds.has(String(item.id))) card.classList.add('selected');
+    grid.appendChild(card);
   }
 
   // gridのclickイベントは一度だけ登録（renderGridの外）
@@ -1887,8 +1974,16 @@
   // ビュー切り替え
   // レイアウト切り替え（通常 / コンパクト）
   function applyLayoutBtns() {
-    el('layout-normal-btn').classList.toggle('active', currentLayout === 'normal');
-    el('layout-compact-btn').classList.toggle('active', currentLayout === 'compact');
+    var btn = el('layout-normal-btn');
+    if (btn) {
+      btn.textContent = currentLayout === 'normal' ? '▦' : '⊞';
+      btn.classList.toggle('active', currentLayout === 'normal');
+    }
+    var btnm = el('layout-normal-btn-m');
+    if (btnm) {
+      btnm.textContent = currentLayout === 'normal' ? '▦' : '⊞';
+      btnm.classList.toggle('active', currentLayout === 'normal');
+    }
   }
 
   function applyViewBtns(view) {
@@ -1911,14 +2006,8 @@
   applyLayoutBtns();
 
   el('layout-normal-btn').addEventListener('click', function() {
-    currentLayout = 'normal';
-    localStorage.setItem('sakuhin-layout', 'normal');
-    applyLayoutBtns();
-    if (currentView === 'grid') renderGrid();
-  });
-  el('layout-compact-btn').addEventListener('click', function() {
-    currentLayout = 'compact';
-    localStorage.setItem('sakuhin-layout', 'compact');
+    currentLayout = currentLayout === 'normal' ? 'compact' : 'normal';
+    localStorage.setItem('sakuhin-layout', currentLayout);
     applyLayoutBtns();
     if (currentView === 'grid') renderGrid();
   });
@@ -2230,10 +2319,7 @@
   function syncMobileBtns() {
     var sm = el('sort-select-m');
     if (sm) sm.value = currentSort;
-    ['layout-normal-btn-m','layout-compact-btn-m'].forEach(function(id) {
-      var b = el(id); if (b) b.classList.toggle('active',
-        id === 'layout-normal-btn-m' ? currentLayout==='normal' : currentLayout==='compact');
-    });
+    // layout-compact-btn-mは削除済み
     // view-grid-btn-m/tl-m は削除済み
   }
 
@@ -2243,13 +2329,12 @@
     currentSort = this.value; el('sort-select').value = this.value;
     if (currentView === 'grid') renderGrid(); else renderTimeline();
   });
-  [['layout-normal-btn-m','normal'],['layout-compact-btn-m','compact']].forEach(function(p) {
-    var b = el(p[0]); if (!b) return;
-    b.addEventListener('click', function() {
-      currentLayout = p[1]; localStorage.setItem('sakuhin-layout', p[1]);
-      applyLayoutBtns(); syncMobileBtns();
-      if (currentView === 'grid') renderGrid();
-    });
+  var lbm = el('layout-normal-btn-m');
+  if (lbm) lbm.addEventListener('click', function() {
+    currentLayout = currentLayout === 'normal' ? 'compact' : 'normal';
+    localStorage.setItem('sakuhin-layout', currentLayout);
+    applyLayoutBtns();
+    if (currentView === 'grid') renderGrid();
   });
   var vgm = el('view-grid-btn-m');
   if (vgm) vgm.addEventListener('click', function() {
@@ -3234,6 +3319,27 @@
   // v3 イベント登録
   // ============================================================
   el('nav-list-btn').addEventListener('click', function(){ setPage('list'); });
+
+  // ジャンルグループ切替
+  function applyGroupBtn() {
+    var icon = groupByGenre ? '⊞' : '⊟';
+    ['group-by-genre-btn','group-by-genre-btn-m'].forEach(function(id){
+      var b = el(id); if (!b) return;
+      b.textContent = icon;
+      b.classList.toggle('active', groupByGenre);
+    });
+  }
+  el('group-by-genre-btn').addEventListener('click', function() {
+    groupByGenre = !groupByGenre;
+    applyGroupBtn();
+    if (currentView === 'grid') renderGrid();
+  });
+  var gbm = el('group-by-genre-btn-m');
+  if (gbm) gbm.addEventListener('click', function() {
+    groupByGenre = !groupByGenre;
+    applyGroupBtn();
+    if (currentView === 'grid') renderGrid();
+  });
   el('nav-home-btn').addEventListener('click', function(){ setPage('home'); });
   el('nav-tl-btn').addEventListener('click', function(){ setPage('timeline'); });
   el('nav-settings-btn').addEventListener('click', function(e){
