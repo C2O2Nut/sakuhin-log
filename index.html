@@ -479,13 +479,40 @@
   .add-type-btn .type-name { font-size:12px; font-weight:500; color:var(--ink); }
   /* スマホパネル */
   #toolbar-more-panel { border-radius:0 0 16px 16px !important; }
+
+  /* ドラッグ&ドロップ */
+  .card.drag-over { outline: 3px solid var(--accent); outline-offset: 2px; transform: scale(1.03); }
+  .card.dragging { opacity: 0.4; }
+
+  /* フォルダー操作 */
+  .folder-remove-btn {
+    position: absolute; top: 6px; left: 6px; z-index: 4;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(0,0,0,0.55); border: none; color: #fff;
+    font-size: 13px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    line-height: 1; pointer-events: all;
+    transition: background 0.15s;
+  }
+  .folder-remove-btn:hover { background: var(--accent); }
+  #folder-back-btn.drag-over {
+    background: var(--accent); color: #fff;
+    border-color: var(--accent);
+  }
+  /* フォルダー選択モーダル */
+  #bulk-folder-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; align-items:flex-end; justify-content:center; }
+  #bulk-folder-modal.open { display:flex; }
+  .bulk-folder-sheet { background:var(--surface); border-radius:16px 16px 0 0; width:100%; max-width:500px; padding:20px 20px 40px; }
+  .bulk-folder-sheet h3 { font-family:'Noto Serif JP',serif; font-size:15px; margin-bottom:16px; color:var(--ink2); text-align:center; }
+  .folder-choice-btn { display:block; width:100%; padding:12px 16px; background:none; border:1.5px solid var(--border); border-radius:8px; margin-bottom:8px; font-family:'Noto Sans JP',sans-serif; font-size:14px; color:var(--ink); cursor:pointer; text-align:left; transition:all 0.15s; }
+  .folder-choice-btn:hover { border-color:var(--accent); background:var(--surface2); }
 </style>
 </head>
 <body>
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.3</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.5</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -508,7 +535,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.3</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.5</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -593,6 +620,8 @@
     <button class="bulk-btn" id="bulk-genre-btn">ジャンル変更</button>
     <div id="bulk-genre-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:300;min-width:120px;overflow:hidden;"></div>
   </div>
+  <button class="bulk-btn" id="bulk-add-folder-btn">フォルダーに追加</button>
+  <button class="bulk-btn" id="bulk-remove-folder-btn" style="display:none;">フォルダーから外す</button>
   <button class="bulk-btn danger" id="bulk-cancel-btn" style="margin-left:auto;">キャンセル</button>
 </div>
 
@@ -828,6 +857,15 @@
   </div>
 </div>
 
+
+
+<div id="bulk-folder-modal">
+  <div class="bulk-folder-sheet">
+    <h3>フォルダーを選択</h3>
+    <div id="bulk-folder-list"></div>
+    <button class="folder-choice-btn" id="bulk-folder-cancel-btn" style="margin-top:8px;border-style:dashed;color:var(--ink3);">キャンセル</button>
+  </div>
+</div>
 
 <!-- ========== v3 HTML ========== -->
 <div id="bottom-nav">
@@ -1422,6 +1460,16 @@
         + '</div>';
       } // end else
       card.setAttribute('data-id', String(item.id));
+      card.setAttribute('draggable', 'true');
+      // フォルダー内表示時: 「外す」ボタン追加
+      if (currentFolderId) {
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'folder-remove-btn';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'フォルダーから外す';
+        removeBtn.setAttribute('data-remove-id', String(item.id));
+        card.appendChild(removeBtn);
+      }
       // 選択チェックマーク
       var check = document.createElement('div');
       check.className = 'select-check';
@@ -1435,6 +1483,19 @@
 
   // gridのclickイベントは一度だけ登録（renderGridの外）
   el('grid-view').addEventListener('click', function(e) {
+    // 「外す」ボタン
+    if (e.target.classList.contains('folder-remove-btn')) {
+      var removeId = e.target.getAttribute('data-remove-id');
+      var folder = items.find(function(x){ return String(x.id) === String(currentFolderId); });
+      if (folder && removeId) {
+        folder.childIds = (folder.childIds||[]).filter(function(c){ return c !== removeId; });
+        saveData();
+        var ri = items.find(function(x){ return String(x.id) === removeId; });
+        showToast((ri ? ri.name : '') + ' を外しました');
+        renderGrid();
+      }
+      return;
+    }
     var card = e.target.closest('.card');
     if (!card) return;
     var id = card.getAttribute('data-id');
@@ -1970,6 +2031,14 @@
     applySelectBtn(true);
     el('bulk-bar').classList.add('show');
     el('add-btn').style.display = 'none';
+    // フォルダー内: 「外す」表示、「追加」非表示
+    if (currentFolderId) {
+      el('bulk-remove-folder-btn').style.display = '';
+      el('bulk-add-folder-btn').style.display = 'none';
+    } else {
+      el('bulk-remove-folder-btn').style.display = 'none';
+      el('bulk-add-folder-btn').style.display = '';
+    }
     updateBulkBar();
   }
 
@@ -3110,6 +3179,155 @@
   el('data-menu').style.right = '16px';
 
   refreshFolderSelect('');
+
+  // ===== フォルダー操作イベント =====
+
+  // バルクバー「フォルダーに追加」
+  el('bulk-add-folder-btn').addEventListener('click', function() {
+    if (!selectedIds.size) { showToast('作品を選択してください', 'error'); return; }
+    var folders = items.filter(function(x){ return x.cardType === 'folder'; });
+    if (!folders.length) { showToast('フォルダーがありません', 'error'); return; }
+    var list = el('bulk-folder-list');
+    list.innerHTML = '';
+    folders.forEach(function(f) {
+      var btn = document.createElement('button');
+      btn.className = 'folder-choice-btn';
+      btn.textContent = '📁 ' + f.name + (f.childIds ? '  (' + f.childIds.length + '件)' : '');
+      btn.addEventListener('click', function() {
+        var fid = String(f.id);
+        selectedIds.forEach(function(id) {
+          // 他フォルダーから外す
+          items.forEach(function(fi){
+            if (fi.cardType==='folder' && String(fi.id)!==fid)
+              fi.childIds = (fi.childIds||[]).filter(function(c){ return c!==id; });
+          });
+          // このフォルダーに追加
+          if (!f.childIds) f.childIds = [];
+          if (f.childIds.indexOf(id) === -1) f.childIds.push(id);
+        });
+        saveData();
+        el('bulk-folder-modal').classList.remove('open');
+        showToast(selectedIds.size + '件を「' + f.name + '」に追加しました', 'success');
+        exitSelectMode();
+        renderGrid();
+      });
+      list.appendChild(btn);
+    });
+    el('bulk-folder-modal').classList.add('open');
+  });
+
+  // バルクバー「フォルダーから外す」（フォルダー内表示中のみ表示）
+  el('bulk-remove-folder-btn').addEventListener('click', function() {
+    if (!selectedIds.size) { showToast('作品を選択してください', 'error'); return; }
+    var folder = items.find(function(x){ return String(x.id) === String(currentFolderId); });
+    if (!folder) return;
+    selectedIds.forEach(function(id) {
+      folder.childIds = (folder.childIds||[]).filter(function(c){ return c !== id; });
+    });
+    saveData();
+    showToast(selectedIds.size + '件をフォルダーから外しました', 'success');
+    exitSelectMode();
+    renderGrid();
+  });
+
+  // フォルダー選択モーダル「キャンセル」
+  el('bulk-folder-cancel-btn').addEventListener('click', function() {
+    el('bulk-folder-modal').classList.remove('open');
+  });
+  el('bulk-folder-modal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+
+  // 戻るボタンへのドラッグ&ドロップ
+  el('folder-back-btn').addEventListener('dragover', function(e) {
+    if (!currentFolderId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    el('folder-back-btn').classList.add('drag-over');
+  });
+  el('folder-back-btn').addEventListener('dragleave', function() {
+    el('folder-back-btn').classList.remove('drag-over');
+  });
+  el('folder-back-btn').addEventListener('drop', function(e) {
+    e.preventDefault();
+    el('folder-back-btn').classList.remove('drag-over');
+    if (!dragItemId || !currentFolderId) return;
+    var folder = items.find(function(x){ return String(x.id) === String(currentFolderId); });
+    if (folder) {
+      folder.childIds = (folder.childIds||[]).filter(function(c){ return c !== dragItemId; });
+      saveData();
+      var di = items.find(function(x){ return String(x.id) === dragItemId; });
+      showToast((di ? di.name : '') + ' をフォルダーから外しました', 'success');
+      renderGrid();
+    }
+    dragItemId = null;
+  });
+
+  // ===== ドラッグ&ドロップ =====
+  var dragItemId = null;
+
+  el('grid-view').addEventListener('dragstart', function(e) {
+    var card = e.target.closest('.card');
+    if (!card) return;
+    // フォルダーカード自体はドラッグ不可
+    var item = items.find(function(x){ return String(x.id) === card.getAttribute('data-id'); });
+    if (item && item.cardType === 'folder') { e.preventDefault(); return; }
+    dragItemId = card.getAttribute('data-id');
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  el('grid-view').addEventListener('dragend', function(e) {
+    var card = e.target.closest('.card');
+    if (card) card.classList.remove('dragging');
+    document.querySelectorAll('.card.drag-over').forEach(function(c){ c.classList.remove('drag-over'); });
+    dragItemId = null;
+  });
+
+  el('grid-view').addEventListener('dragover', function(e) {
+    var card = e.target.closest('.card');
+    if (!card) return;
+    var item = items.find(function(x){ return String(x.id) === card.getAttribute('data-id'); });
+    if (item && item.cardType === 'folder') {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.card.drag-over').forEach(function(c){ c.classList.remove('drag-over'); });
+      card.classList.add('drag-over');
+    }
+  });
+
+  el('grid-view').addEventListener('dragleave', function(e) {
+    var card = e.target.closest('.card');
+    if (card) card.classList.remove('drag-over');
+  });
+
+  el('grid-view').addEventListener('drop', function(e) {
+    e.preventDefault();
+    var card = e.target.closest('.card');
+    if (!card) return;
+    card.classList.remove('drag-over');
+    var folderId = card.getAttribute('data-id');
+    var folder = items.find(function(x){ return String(x.id) === folderId && x.cardType === 'folder'; });
+    if (!folder || !dragItemId || dragItemId === folderId) return;
+    if (!folder.childIds) folder.childIds = [];
+    // 他のフォルダーから外す
+    items.forEach(function(f){
+      if (f.cardType === 'folder' && String(f.id) !== folderId) {
+        f.childIds = (f.childIds||[]).filter(function(c){ return c !== dragItemId; });
+      }
+    });
+    // このフォルダーに追加（重複防止）
+    if (folder.childIds.indexOf(dragItemId) === -1) {
+      folder.childIds.push(dragItemId);
+      saveData();
+      var itemName = '';
+      var draggedItem = items.find(function(x){ return String(x.id) === dragItemId; });
+      if (draggedItem) itemName = draggedItem.name;
+      showToast('「' + itemName + '」を追加しました', 'success');
+      renderGrid();
+    }
+    dragItemId = null;
+  });
 
   // ジャンルUI初期構築
   rebuildGenreUI();
