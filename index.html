@@ -512,7 +512,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.5</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.6</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -535,7 +535,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.5</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.6</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -1360,7 +1360,16 @@
       var cids = folder ? (folder.childIds||[]) : [];
       return items.filter(function(x){ return cids.indexOf(String(x.id))!==-1; });
     }
-    var result = currentFilter.size === 0 ? items.slice() : items.filter(function(x) { return currentFilter.has(x.genre); });
+    // どのフォルダーにも入っているIDを収集
+    var inFolderIds = {};
+    items.forEach(function(f){
+      if (f.cardType === 'folder') {
+        (f.childIds||[]).forEach(function(cid){ inFolderIds[cid] = true; });
+      }
+    });
+    var result = currentFilter.size === 0
+      ? items.filter(function(x){ return !inFolderIds[String(x.id)]; })
+      : items.filter(function(x){ return !inFolderIds[String(x.id)] && currentFilter.has(x.genre); });
     if (currentTagFilter) {
       result = result.filter(function(x) { return (x.tags||[]).indexOf(currentTagFilter) !== -1; });
     }
