@@ -432,98 +432,30 @@
   #toast.error   { background: #a03030; }
   @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
 
-  /* ===== ムードカード ===== */
-  .mood-circle {
-    width: 56px; height: 56px; border-radius: 50%; opacity: 0.85;
-  }
-
-  /* ===== フォルダーカード ===== */
-  .folder-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr; width: 100%; height: 100%;
-    gap: 1px; background: var(--border);
-  }
-  .folder-grid-cell {
-    background: var(--surface2); overflow: hidden;
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
-  }
-  .folder-grid-cell img { width: 100%; height: 100%; object-fit: cover; }
-  .folder-count-badge {
-    position: absolute; bottom: 6px; right: 6px;
-    background: rgba(0,0,0,0.6); color: #fff; border-radius: 3px;
-    font-size: 10px; padding: 2px 5px; font-family: 'DM Mono', monospace;
-  }
-
-  /* ===== パンくずバー ===== */
-  #folder-breadcrumb {
-    display: none; align-items: center; gap: 8px;
-    padding: 8px 16px; background: var(--surface2);
-    border-bottom: 1px solid var(--border); font-size: 13px; color: var(--ink2);
-  }
-  #folder-breadcrumb.show { display: flex; }
-  #folder-back-btn {
-    padding: 4px 12px; border: 1.5px solid var(--border); border-radius: 4px;
-    background: none; cursor: pointer; font-size: 12px; color: var(--ink2);
-    font-family: 'Noto Sans JP', sans-serif;
-  }
-
-  /* ===== 下部ナビバー ===== */
-  #bottom-nav {
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
-    height: 56px; background: var(--surface);
-    border-top: 1px solid var(--border);
-    display: flex; align-items: stretch;
-    box-shadow: 0 -2px 12px var(--shadow);
-  }
-  .nav-btn {
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 3px;
-    background: none; border: none; cursor: pointer;
-    font-family: 'Noto Sans JP', sans-serif; font-size: 10px;
-    color: var(--ink3); transition: color 0.15s;
-  }
-  .nav-btn.active { color: var(--accent); }
-  .nav-btn .nav-icon { font-size: 20px; line-height: 1; }
-  body { padding-bottom: 56px; }
-
-  /* ===== ホーム画面 ===== */
-  #home-view {
-    display: none; padding: 40px 24px;
-    text-align: center; color: var(--ink3);
-  }
-  #home-view h2 {
-    font-family: 'Noto Serif JP', serif; font-size: 20px;
-    color: var(--ink2); margin-bottom: 12px;
-  }
-
-  /* ===== 追加タイプシート ===== */
-  #add-type-modal {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5); z-index: 300;
-    align-items: flex-end; justify-content: center;
-  }
-  #add-type-modal.open { display: flex; }
-  .add-type-sheet {
-    background: var(--surface); border-radius: 12px 12px 0 0;
-    width: 100%; max-width: 500px; padding: 20px 20px 36px;
-  }
-  .add-type-sheet h3 {
-    font-family: 'Noto Serif JP', serif; font-size: 15px;
-    margin-bottom: 16px; color: var(--ink2); text-align: center;
-  }
-  .add-type-grid {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
-  }
-  .add-type-btn {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 6px; padding: 16px 8px;
-    background: var(--surface2); border: 1.5px solid var(--border);
-    border-radius: 8px; cursor: pointer;
-    font-family: 'Noto Sans JP', sans-serif; transition: all 0.15s;
-  }
-  .add-type-btn:hover { border-color: var(--accent); }
-  .add-type-btn .type-icon { font-size: 24px; }
-  .add-type-btn .type-name { font-size: 12px; font-weight: 500; color: var(--ink); }
+  /* ===== v3.0.0 ===== */
+  .folder-grid { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; width:100%; height:100%; gap:1px; background:var(--border); }
+  .folder-grid-cell { background:var(--surface2); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .folder-grid-cell img { width:100%; height:100%; object-fit:cover; }
+  .folder-count-badge { position:absolute; bottom:6px; right:6px; background:rgba(0,0,0,0.6); color:#fff; border-radius:3px; font-size:10px; padding:2px 5px; font-family:'DM Mono',monospace; }
+  #folder-breadcrumb { display:none; align-items:center; gap:8px; padding:8px 16px; background:var(--surface2); border-bottom:1px solid var(--border); font-size:13px; color:var(--ink2); }
+  #folder-breadcrumb.show { display:flex; }
+  #folder-back-btn { padding:4px 12px; border:1.5px solid var(--border); border-radius:4px; background:none; cursor:pointer; font-size:12px; color:var(--ink2); font-family:'Noto Sans JP',sans-serif; }
+  #bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:200; height:56px; background:var(--surface); border-top:1px solid var(--border); display:flex; align-items:stretch; box-shadow:0 -2px 12px var(--shadow); }
+  .nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:none; border:none; cursor:pointer; font-family:'Noto Sans JP',sans-serif; font-size:10px; color:var(--ink3); transition:color 0.15s; }
+  .nav-btn.active { color:var(--accent); }
+  .nav-btn .nav-icon { font-size:20px; line-height:1; }
+  body { padding-bottom:56px; }
+  #home-view { display:none; padding:40px 24px; text-align:center; color:var(--ink3); }
+  #home-view h2 { font-family:'Noto Serif JP',serif; font-size:20px; color:var(--ink2); margin-bottom:12px; }
+  #add-type-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; align-items:flex-end; justify-content:center; }
+  #add-type-modal.open { display:flex; }
+  .add-type-sheet { background:var(--surface); border-radius:12px 12px 0 0; width:100%; max-width:500px; padding:20px 20px 36px; }
+  .add-type-sheet h3 { font-family:'Noto Serif JP',serif; font-size:15px; margin-bottom:16px; color:var(--ink2); text-align:center; }
+  .add-type-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .add-type-btn { display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 8px; background:var(--surface2); border:1.5px solid var(--border); border-radius:8px; cursor:pointer; font-family:'Noto Sans JP',sans-serif; transition:all 0.15s; }
+  .add-type-btn:hover { border-color:var(--accent); }
+  .add-type-btn .type-icon { font-size:24px; }
+  .add-type-btn .type-name { font-size:12px; font-weight:500; color:var(--ink); }
 </style>
 </head>
 <body>
@@ -651,7 +583,6 @@
 </div>
 
 
-<!-- フォルダーパンくずバー -->
 <div id="folder-breadcrumb">
   <button id="folder-back-btn">← 戻る</button>
   <span style="color:var(--ink3);">フォルダー：</span>
@@ -660,7 +591,6 @@
 <div class="count-bar" id="count-bar">0 件</div>
 
 
-<!-- ホーム画面 -->
 <div id="home-view">
   <h2>ホーム</h2>
   <p style="font-size:14px;">準備中</p>
@@ -884,7 +814,7 @@
       </div>
       <div class="form-row">
         <label>フォルダーに追加</label>
-        <select id="f-folder-select" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:14px;background:var(--bg);color:var(--ink);">
+        <select id="f-folder-select" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:14px;background:var(--bg);color:var(--ink);outline:none;">
           <option value="">（なし）</option>
         </select>
       </div>
@@ -985,7 +915,8 @@
   var photoData = null;
   var memoPhotoData = null;
   // v3.0.0
-  var currentFolderId = null;
+  var currentPage = 'list';   // 'list' | 'home' | 'timeline'
+  var currentFolderId = null; // 開いているフォルダーのID
   var moodEditingId = null;
   var folderEditingId = null;
   var folderStar = 0;
@@ -1252,6 +1183,12 @@
       el('f-memo').value = ''; el('btn-delete').style.display = 'none';
       el('btn-important').style.display = 'none';
       refreshFolderSelect('');
+    } else {
+      // 編集時: 所属フォルダーを復元
+      var parentFolder = items.find(function(f){
+        return f.cardType === 'folder' && (f.childIds||[]).indexOf(String(editingId)) !== -1;
+      });
+      refreshFolderSelect(parentFolder ? String(parentFolder.id) : '');
     }
     el('modal').classList.add('open');
     el('f-name').focus();
@@ -1302,10 +1239,10 @@
         }
       });
       if (selectedFolderId) {
-        var targetFolder = items.find(function(f){ return String(f.id) === selectedFolderId; });
-        if (targetFolder) {
-          if (!targetFolder.childIds) targetFolder.childIds = [];
-          if (targetFolder.childIds.indexOf(itemIdStr) === -1) targetFolder.childIds.push(itemIdStr);
+        var tf = items.find(function(f){ return String(f.id) === selectedFolderId; });
+        if (tf) {
+          if (!tf.childIds) tf.childIds = [];
+          if (tf.childIds.indexOf(itemIdStr) === -1) tf.childIds.push(itemIdStr);
         }
       }
     }
@@ -1674,44 +1611,23 @@
       + '</head><body><h1>作品ログ 年表</h1>'
       + '<p style="font-size:12px;color:#999;margin-bottom:20px;">出力日：' + new Date().toLocaleDateString('ja-JP') + ' / 全 ' + items.length + ' 件</p>'
       + body + '
-<!-- 下部ナビバー -->
 <div id="bottom-nav">
-  <button class="nav-btn active" id="nav-list-btn">
-    <span class="nav-icon">▦</span>
-    <span>一覧</span>
-  </button>
-  <button class="nav-btn" id="nav-home-btn">
-    <span class="nav-icon">⌂</span>
-    <span>ホーム</span>
-  </button>
-  <button class="nav-btn" id="nav-tl-btn">
-    <span class="nav-icon">≡</span>
-    <span>年表</span>
-  </button>
+  <button class="nav-btn active" id="nav-list-btn"><span class="nav-icon">▦</span><span>一覧</span></button>
+  <button class="nav-btn" id="nav-home-btn"><span class="nav-icon">⌂</span><span>ホーム</span></button>
+  <button class="nav-btn" id="nav-tl-btn"><span class="nav-icon">≡</span><span>年表</span></button>
 </div>
 
-<!-- 追加タイプシート -->
 <div id="add-type-modal">
   <div class="add-type-sheet">
     <h3>何を追加しますか？</h3>
     <div class="add-type-grid">
-      <button class="add-type-btn" id="add-type-normal">
-        <span class="type-icon">📚</span>
-        <span class="type-name">作品</span>
-      </button>
-      <button class="add-type-btn" id="add-type-mood">
-        <span class="type-icon">💭</span>
-        <span class="type-name">ムード</span>
-      </button>
-      <button class="add-type-btn" id="add-type-folder">
-        <span class="type-icon">📁</span>
-        <span class="type-name">フォルダー</span>
-      </button>
+      <button class="add-type-btn" id="add-type-normal"><span class="type-icon">📚</span><span class="type-name">作品</span></button>
+      <button class="add-type-btn" id="add-type-mood"><span class="type-icon">💭</span><span class="type-name">ムード</span></button>
+      <button class="add-type-btn" id="add-type-folder"><span class="type-icon">📁</span><span class="type-name">フォルダー</span></button>
     </div>
   </div>
 </div>
 
-<!-- ムードモーダル -->
 <div class="modal-overlay" id="mood-modal">
   <div class="modal">
     <div class="modal-header">
@@ -1719,24 +1635,13 @@
       <button class="modal-close" id="mood-modal-close">×</button>
     </div>
     <div class="modal-body">
-      <div class="form-row">
-        <label>タイトル（任意）</label>
-        <input type="text" id="mood-name" placeholder="例：夏の気分">
-      </div>
+      <div class="form-row"><label>タイトル（任意）</label><input type="text" id="mood-name" placeholder="例：夏の気分"></div>
       <div class="form-row">
         <label>カラー</label>
-        <input type="color" id="mood-color" value="#6a8cc4"
-          style="height:40px;width:80px;padding:2px;border:1.5px solid var(--border);border-radius:4px;cursor:pointer;">
+        <input type="color" id="mood-color" value="#6a8cc4" style="height:40px;width:80px;padding:2px;border:1.5px solid var(--border);border-radius:4px;cursor:pointer;">
       </div>
-      <div class="form-row">
-        <label>期間</label>
-        <div id="mood-date-list"></div>
-        <button type="button" class="add-date-btn" id="mood-add-date-btn">＋ 期間を追加</button>
-      </div>
-      <div class="form-row">
-        <label>メモ</label>
-        <textarea id="mood-memo" placeholder="そのときの気持ち…"></textarea>
-      </div>
+      <div class="form-row"><label>期間</label><div id="mood-date-list"></div><button type="button" class="add-date-btn" id="mood-add-date-btn">＋ 期間を追加</button></div>
+      <div class="form-row"><label>メモ</label><textarea id="mood-memo" placeholder="そのときの気持ち…"></textarea></div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn-delete" id="mood-delete-btn" style="display:none">削除</button>
@@ -1746,7 +1651,6 @@
   </div>
 </div>
 
-<!-- フォルダーモーダル -->
 <div class="modal-overlay" id="folder-modal">
   <div class="modal">
     <div class="modal-header">
@@ -1754,14 +1658,8 @@
       <button class="modal-close" id="folder-modal-close">×</button>
     </div>
     <div class="modal-body">
-      <div class="form-row">
-        <label>フォルダー名 *</label>
-        <input type="text" id="folder-name-input" placeholder="例：スター・ウォーズシリーズ">
-      </div>
-      <div class="form-row">
-        <label>詳細</label>
-        <input type="text" id="folder-detail" placeholder="例：全3部作">
-      </div>
+      <div class="form-row"><label>フォルダー名 *</label><input type="text" id="folder-name-input" placeholder="例：スター・ウォーズシリーズ"></div>
+      <div class="form-row"><label>詳細</label><input type="text" id="folder-detail" placeholder="例：全3部作"></div>
       <div class="form-row">
         <label>おもしろさ</label>
         <div class="star-input" id="folder-star-input">
@@ -1948,12 +1846,16 @@
   });
 
   el('view-grid-btn').addEventListener('click', function() {
-    setPage('list');
+    currentView = 'grid';
     applyViewBtns('grid');
+    el('grid-view').style.display = 'grid'; el('timeline-view').style.display = 'none';
+    renderGrid();
   });
   el('view-tl-btn').addEventListener('click', function() {
-    setPage('timeline');
+    currentView = 'timeline';
     applyViewBtns('timeline');
+    el('grid-view').style.display = 'none'; el('timeline-view').style.display = 'block';
+    renderTimeline();
   });
 
   // 並び替え
@@ -2261,20 +2163,28 @@
   });
   var vgm = el('view-grid-btn-m');
   if (vgm) vgm.addEventListener('click', function() {
+    currentView = 'grid'; applyViewBtns('grid'); syncMobileBtns();
+    el('grid-view').style.display = 'grid'; el('timeline-view').style.display = 'none';
     el('toolbar-more-panel').classList.remove('open');
-    setPage('list'); syncMobileBtns();
+    renderGrid();
   });
   var vtm = el('view-tl-btn-m');
   if (vtm) vtm.addEventListener('click', function() {
+    currentView = 'timeline'; applyViewBtns('timeline'); syncMobileBtns();
+    el('grid-view').style.display = 'none'; el('timeline-view').style.display = 'block';
     el('toolbar-more-panel').classList.remove('open');
-    setPage('timeline'); syncMobileBtns();
+    renderTimeline();
   });
   var vsm = el('select-mode-btn-m');
   if (vsm) vsm.addEventListener('click', function() {
     el('toolbar-more-panel').classList.remove('open');
     if (selectMode) exitSelectMode(); else enterSelectMode();
   });
-  // add-btn-m は add-type-modal に移管（v3.0.0）
+  var vam = el('add-btn-m');
+  if (vam) vam.addEventListener('click', function() {
+    el('toolbar-more-panel').classList.remove('open');
+    el('add-type-modal').classList.add('open');
+  });
 
   el('toolbar-expand-btn').addEventListener('click', function(e) {
     e.stopPropagation();
@@ -2289,7 +2199,7 @@
     }
   });
 
-  // add-btn は add-type-modal に移管（v3.0.0）
+  el('add-btn').addEventListener('click', function() { el('add-type-modal').classList.add('open'); });
   el('modal-close-btn').addEventListener('click', closeModal);
   el('btn-cancel').addEventListener('click', closeModal);
   el('modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
@@ -3028,85 +2938,34 @@
     navigator.serviceWorker.register('/sakuhin-log/sw.js').catch(function() {});
   }
 
-  // ジャンルUI初期構築
-  rebuildGenreUI();
 
-  // ボタン状態初期化
-  applyLayoutBtns();
-  applyViewBtns('grid');
-  applySelectBtn(false);
+  // ===== v3.0.0 関数群（初期化より前に定義） =====
 
-  // 初期レンダリング
-  setPage('list');
-
-  // ===== v3.0.0 新機能 =====
-  // ===== ナビゲーション =====
-  function setPage(page) {
-    ['nav-list-btn','nav-home-btn','nav-tl-btn'].forEach(function(id){ el(id).classList.remove('active'); });
-    el('grid-view').style.display = 'none';
-    el('timeline-view').style.display = 'none';
-    el('home-view').style.display = 'none';
-    el('count-bar').style.display = 'block';
-
-    if (page === 'list') {
-      el('nav-list-btn').classList.add('active');
-      el('grid-view').style.display = '';
-      currentView = 'grid';
-      applyViewBtns('grid');
-      renderGrid();
-    } else if (page === 'home') {
-      el('nav-home-btn').classList.add('active');
-      el('home-view').style.display = 'block';
-      el('count-bar').style.display = 'none';
-    } else if (page === 'timeline') {
-      el('nav-tl-btn').classList.add('active');
-      el('timeline-view').style.display = 'block';
-      currentView = 'timeline';
-      applyViewBtns('timeline');
-      renderTimeline();
-    }
+  // フォルダーselectを更新
+  function refreshFolderSelect(currentVal) {
+    var sel = el('f-folder-select');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">（なし）</option>';
+    items.filter(function(x){ return x.cardType === 'folder'; }).forEach(function(f){
+      var opt = document.createElement('option');
+      opt.value = String(f.id); opt.textContent = f.name;
+      sel.appendChild(opt);
+    });
+    if (currentVal !== undefined) sel.value = currentVal || '';
   }
 
-  el('nav-list-btn').addEventListener('click', function(){ setPage('list'); });
-  el('nav-home-btn').addEventListener('click', function(){ setPage('home'); });
-  el('nav-tl-btn').addEventListener('click', function(){ setPage('timeline'); });
-
-  // ナビと既存ボタンの連動はsetPage内で処理
-
-  // ===== 追加ボタン → タイプ選択シート =====
-  el('add-btn').addEventListener('click', function(){
-    el('add-type-modal').classList.add('open');
-  });
-  var _addBtnM = el('add-btn-m');
-  if (_addBtnM) _addBtnM.addEventListener('click', function(){
-    el('toolbar-more-panel').classList.remove('open');
-    el('add-type-modal').classList.add('open');
-  });
-  el('add-type-modal').addEventListener('click', function(e){
-    if (e.target === this) this.classList.remove('open');
-  });
-  el('add-type-normal').addEventListener('click', function(){
-    el('add-type-modal').classList.remove('open'); openModal(null);
-  });
-  el('add-type-mood').addEventListener('click', function(){
-    el('add-type-modal').classList.remove('open'); openMoodModal(null);
-  });
-  el('add-type-folder').addEventListener('click', function(){
-    el('add-type-modal').classList.remove('open'); openFolderModal(null);
-  });
-
-  // ===== ムードカード関数 =====
+  // ムードカード生成
   function makeMoodCard(item) {
     var color = item.color || '#6a8cc4';
     var dates = getItemDates(item);
     var datesHTML = dates.map(function(d){
-      var fmt = function(v){ return !v ? '?' : v; };
+      var fmt = function(v){ return !v ? '?' : (d.mode === 'month' ? v.slice(0,7) : v); };
       return '<div class="card-dates">' + fmt(d.start) + ' 〜 ' + fmt(d.end) + '</div>';
     }).join('');
     var card = document.createElement('div');
     card.className = 'card mood-card';
     card.innerHTML = '<div class="card-photo" style="background:' + color + '22;min-height:80px;">'
-      + '<div class="mood-circle" style="background:' + color + ';"></div>'
+      + '<div style="width:56px;height:56px;border-radius:50%;background:' + color + ';opacity:0.85;"></div>'
       + '</div>'
       + '<div class="card-body">'
       + '<div class="card-title">' + (item.name || 'ムード') + '</div>'
@@ -3116,7 +2975,7 @@
     return card;
   }
 
-  // ===== フォルダーカード関数 =====
+  // フォルダーカード生成
   function makeFolderCard(item) {
     var childIds = item.childIds || [];
     var childItems = childIds.map(function(id){
@@ -3143,7 +3002,7 @@
     return card;
   }
 
-  // ===== フォルダー開く・閉じる =====
+  // フォルダーを開く
   function openFolderInner(id) {
     currentFolderId = id;
     var folder = items.find(function(x){ return String(x.id) === String(id); });
@@ -3151,44 +3010,65 @@
     el('folder-name-label').textContent = folder ? folder.name : '';
     renderGrid();
   }
+
+  // フォルダーを閉じる
   function closeFolderInner() {
     currentFolderId = null;
     el('folder-breadcrumb').className = '';
     renderGrid();
   }
-  el('folder-back-btn').addEventListener('click', closeFolderInner);
 
-  // ===== フォルダーselect更新 =====
-  function refreshFolderSelect(currentVal) {
-    var sel = el('f-folder-select');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">（なし）</option>';
-    items.filter(function(x){ return x.cardType === 'folder'; }).forEach(function(f){
-      var opt = document.createElement('option');
-      opt.value = String(f.id); opt.textContent = f.name;
-      sel.appendChild(opt);
+  // ページ切替
+  function setPage(page) {
+    currentPage = page;
+    ['nav-list-btn','nav-home-btn','nav-tl-btn'].forEach(function(id){
+      var b = el(id); if (b) b.classList.remove('active');
     });
-    if (currentVal !== undefined) sel.value = currentVal;
+    el('grid-view').style.display = 'none';
+    el('timeline-view').style.display = 'none';
+    el('home-view').style.display = 'none';
+    el('count-bar').style.display = 'block';
+
+    if (page === 'list') {
+      var nb = el('nav-list-btn'); if (nb) nb.classList.add('active');
+      el('grid-view').style.display = '';
+      currentView = 'grid';
+      applyViewBtns('grid');
+      renderGrid();
+    } else if (page === 'home') {
+      var nb = el('nav-home-btn'); if (nb) nb.classList.add('active');
+      el('home-view').style.display = 'block';
+      el('count-bar').style.display = 'none';
+    } else if (page === 'timeline') {
+      var nb = el('nav-tl-btn'); if (nb) nb.classList.add('active');
+      el('timeline-view').style.display = 'block';
+      currentView = 'timeline';
+      applyViewBtns('timeline');
+      renderTimeline();
+    }
   }
 
-  // ===== ムードモーダル =====
+  // ムードモーダル
   function openMoodModal(id) {
-    moodEditingId = id;
+    moodEditingId = id || null;
     var item = id ? items.find(function(x){ return String(x.id) === String(id); }) : null;
     el('mood-modal-title').textContent = item ? 'ムードを編集' : 'ムードを追加';
     el('mood-name').value = item ? (item.name || '') : '';
     el('mood-color').value = item ? (item.color || '#6a8cc4') : '#6a8cc4';
     el('mood-memo').value = item ? (item.memo || '') : '';
-    var list = el('mood-date-list'); list.innerHTML = '';
+    var list = el('mood-date-list');
+    list.innerHTML = '';
     var dates = item ? getItemDates(item) : [];
-    if (dates.length === 0) dates = [{ start:'', end:'' }];
+    if (dates.length === 0) dates = [{start:'',end:''}];
     dates.forEach(function(d){ addMoodDateRow(d.start, d.end); });
     el('mood-delete-btn').style.display = item ? 'inline-block' : 'none';
     el('mood-modal').classList.add('open');
   }
+
   function addMoodDateRow(start, end) {
     var list = el('mood-date-list');
-    var row = document.createElement('div'); row.className = 'date-row';
+    var row = document.createElement('div');
+    row.className = 'date-row';
     var s = document.createElement('input'); s.type = 'date'; s.className = 'date-start'; s.value = start || '';
     var sep = document.createElement('span'); sep.className = 'date-sep'; sep.textContent = '〜';
     var e = document.createElement('input'); e.type = 'date'; e.className = 'date-end'; e.value = end || '';
@@ -3197,12 +3077,13 @@
     row.appendChild(s); row.appendChild(sep); row.appendChild(e); row.appendChild(rm);
     list.appendChild(row);
   }
+
   function saveMoodItem() {
     var dates = [];
     document.querySelectorAll('#mood-date-list .date-row').forEach(function(r){
       var s = r.querySelector('.date-start').value;
       var e = r.querySelector('.date-end').value;
-      if (s || e) dates.push({ start:s, end:e, mode:'day' });
+      if (s || e) dates.push({start:s, end:e, mode:'day'});
     });
     var item = {
       id: moodEditingId || Date.now(),
@@ -3210,36 +3091,31 @@
       name: el('mood-name').value.trim() || 'ムード',
       color: el('mood-color').value,
       memo: el('mood-memo').value.trim(),
-      dates: dates, updatedAt: Date.now()
+      dates: dates,
+      updatedAt: Date.now()
     };
     if (moodEditingId) {
       for (var i = 0; i < items.length; i++) {
         if (String(items[i].id) === String(moodEditingId)) { items[i] = item; break; }
       }
     } else { items.unshift(item); }
-    saveData(); el('mood-modal').classList.remove('open'); renderGrid();
+    saveData();
+    el('mood-modal').classList.remove('open');
+    renderGrid();
     showToast('ムードを保存しました', 'success');
   }
-  el('mood-modal-close').addEventListener('click', function(){ el('mood-modal').classList.remove('open'); });
-  el('mood-cancel-btn').addEventListener('click', function(){ el('mood-modal').classList.remove('open'); });
-  el('mood-save-btn').addEventListener('click', saveMoodItem);
-  el('mood-add-date-btn').addEventListener('click', function(){ addMoodDateRow('',''); });
-  el('mood-delete-btn').addEventListener('click', function(){
-    if (!confirm('このムードを削除しますか？')) return;
-    items = items.filter(function(x){ return String(x.id) !== String(moodEditingId); });
-    saveData(); el('mood-modal').classList.remove('open'); renderGrid();
-    showToast('削除しました');
-  });
 
-  // ===== フォルダーモーダル =====
+  // フォルダーモーダル
   function setFolderStar(val) {
     folderStar = val;
     document.querySelectorAll('#folder-star-input button').forEach(function(b, i){
-      b.textContent = i < val ? '★' : '☆'; b.style.color = i < val ? '#d4920a' : '#aaa';
+      b.textContent = i < val ? '★' : '☆';
+      b.style.color = i < val ? '#d4920a' : '#aaa';
     });
   }
+
   function openFolderModal(id) {
-    folderEditingId = id;
+    folderEditingId = id || null;
     var item = id ? items.find(function(x){ return String(x.id) === String(id); }) : null;
     el('folder-modal-title').textContent = item ? 'フォルダーを編集' : 'フォルダーを作成';
     el('folder-name-input').value = item ? item.name : '';
@@ -3248,14 +3124,18 @@
     el('folder-delete-btn').style.display = item ? 'inline-block' : 'none';
     el('folder-modal').classList.add('open');
   }
+
   function saveFolderItem() {
     var name = el('folder-name-input').value.trim();
     if (!name) { showToast('フォルダー名を入力してください', 'error'); return; }
     var existing = folderEditingId ? items.find(function(x){ return String(x.id) === String(folderEditingId); }) : null;
     var item = {
-      id: folderEditingId || Date.now(), cardType: 'folder',
-      name: name, detail: el('folder-detail').value.trim(),
-      stars: folderStar, childIds: existing ? (existing.childIds || []) : [],
+      id: folderEditingId || Date.now(),
+      cardType: 'folder',
+      name: name,
+      detail: el('folder-detail').value.trim(),
+      stars: folderStar,
+      childIds: existing ? (existing.childIds || []) : [],
       updatedAt: Date.now()
     };
     if (folderEditingId) {
@@ -3263,25 +3143,75 @@
         if (String(items[i].id) === String(folderEditingId)) { items[i] = item; break; }
       }
     } else { items.unshift(item); }
-    saveData(); el('folder-modal').classList.remove('open'); renderGrid();
+    saveData();
+    el('folder-modal').classList.remove('open');
+    refreshFolderSelect('');
+    renderGrid();
     showToast('フォルダーを保存しました', 'success');
   }
+
+  // ジャンルUI初期構築
+  rebuildGenreUI();
+
+  // ボタン状態初期化
+  applyLayoutBtns();
+  applyViewBtns('grid');
+  applySelectBtn(false);
+
+  // 初期レンダリング
+  renderGrid();
+
+  // ===== v3.0.0 イベント登録 =====
+  // ナビバー
+  el('nav-list-btn').addEventListener('click', function(){ setPage('list'); });
+  el('nav-home-btn').addEventListener('click', function(){ setPage('home'); });
+  el('nav-tl-btn').addEventListener('click', function(){ setPage('timeline'); });
+
+  // タイプ選択シート
+  el('add-type-modal').addEventListener('click', function(e){
+    if (e.target === this) this.classList.remove('open');
+  });
+  el('add-type-normal').addEventListener('click', function(){
+    el('add-type-modal').classList.remove('open'); openModal(null);
+  });
+  el('add-type-mood').addEventListener('click', function(){
+    el('add-type-modal').classList.remove('open'); openMoodModal(null);
+  });
+  el('add-type-folder').addEventListener('click', function(){
+    el('add-type-modal').classList.remove('open'); openFolderModal(null);
+  });
+
+  // フォルダーパンくず「戻る」
+  el('folder-back-btn').addEventListener('click', closeFolderInner);
+
+  // ムードモーダル
+  el('mood-modal-close').addEventListener('click', function(){ el('mood-modal').classList.remove('open'); });
+  el('mood-cancel-btn').addEventListener('click', function(){ el('mood-modal').classList.remove('open'); });
+  el('mood-save-btn').addEventListener('click', saveMoodItem);
+  el('mood-add-date-btn').addEventListener('click', function(){ addMoodDateRow('', ''); });
+  el('mood-delete-btn').addEventListener('click', function(){
+    if (!confirm('このムードを削除しますか？')) return;
+    items = items.filter(function(x){ return String(x.id) !== String(moodEditingId); });
+    saveData(); el('mood-modal').classList.remove('open'); renderGrid();
+    showToast('削除しました');
+  });
+
+  // フォルダーモーダル
   el('folder-modal-close').addEventListener('click', function(){ el('folder-modal').classList.remove('open'); });
   el('folder-cancel-btn').addEventListener('click', function(){ el('folder-modal').classList.remove('open'); });
   el('folder-save-btn').addEventListener('click', saveFolderItem);
-  document.querySelectorAll('#folder-star-input button').forEach(function(btn){
-    btn.addEventListener('click', function(){ setFolderStar(parseInt(btn.getAttribute('data-val'))); });
-  });
   el('folder-delete-btn').addEventListener('click', function(){
     if (!confirm('このフォルダーを削除しますか？')) return;
     items = items.filter(function(x){ return String(x.id) !== String(folderEditingId); });
     saveData(); el('folder-modal').classList.remove('open'); renderGrid();
     showToast('削除しました');
   });
+  document.querySelectorAll('#folder-star-input button').forEach(function(btn){
+    btn.addEventListener('click', function(){ setFolderStar(parseInt(btn.getAttribute('data-val'))); });
+  });
 
-  // 初期化
+  // フォルダーselectを初期化
   refreshFolderSelect('');
-
 
 })();
 
