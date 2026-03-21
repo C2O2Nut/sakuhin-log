@@ -529,7 +529,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.1.1</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.1.2</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -552,7 +552,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.1</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.2</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -1087,6 +1087,22 @@
       resolveNext();
     }
     resolveNext();
+  }
+
+  // 画像をJPEG・最大800pxに圧縮してBase64返す
+  function compressImage(dataUrl, callback) {
+    var img = new Image();
+    img.onload = function() {
+      var max = 800;
+      var w = img.width, h = img.height;
+      if (w > max) { h = Math.round(h * max / w); w = max; }
+      if (h > max) { w = Math.round(w * max / h); h = max; }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = dataUrl;
   }
 
   function saveData() {
@@ -2329,9 +2345,11 @@
     var file = this.files[0]; if (!file) return;
     var reader = new FileReader();
     reader.onload = function(e) {
-      photoData = e.target.result;
-      el('photo-preview').src = photoData; el('photo-preview').style.display = 'block';
-      el('photo-placeholder').style.display = 'none';
+      compressImage(e.target.result, function(compressed) {
+        photoData = compressed;
+        el('photo-preview').src = compressed; el('photo-preview').style.display = 'block';
+        el('photo-placeholder').style.display = 'none';
+      });
     };
     reader.readAsDataURL(file);
   });
@@ -2340,9 +2358,11 @@
     var file = this.files[0]; if (!file) return;
     var reader = new FileReader();
     reader.onload = function(e) {
-      memoPhotoData = e.target.result;
-      el('memo-preview').src = memoPhotoData; el('memo-preview').style.display = 'block';
-      el('memo-placeholder').style.display = 'none'; el('memo-clear-btn').style.display = 'block';
+      compressImage(e.target.result, function(compressed) {
+        memoPhotoData = compressed;
+        el('memo-preview').src = compressed; el('memo-preview').style.display = 'block';
+        el('memo-placeholder').style.display = 'none'; el('memo-clear-btn').style.display = 'block';
+      });
     };
     reader.readAsDataURL(file);
   });
@@ -3315,11 +3335,13 @@
     var file = this.files[0]; if (!file) return;
     var reader = new FileReader();
     reader.onload = function(e) {
-      folderCoverData = e.target.result;
-      el('folder-cover-preview').src = folderCoverData;
-      el('folder-cover-preview').style.display = 'block';
-      el('folder-cover-placeholder').style.display = 'none';
-      el('folder-cover-clear').style.display = 'block';
+      compressImage(e.target.result, function(compressed) {
+        folderCoverData = compressed;
+        el('folder-cover-preview').src = compressed;
+        el('folder-cover-preview').style.display = 'block';
+        el('folder-cover-placeholder').style.display = 'none';
+        el('folder-cover-clear').style.display = 'block';
+      });
     };
     reader.readAsDataURL(file);
   });
