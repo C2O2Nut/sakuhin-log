@@ -522,7 +522,7 @@
 
 <div id="loading-spinner"><div class="spinner-ring"></div></div>
 <div id="toast"></div>
-<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.8</div>
+<div style="position:fixed;bottom:8px;left:12px;font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);opacity:0.4;z-index:50;pointer-events:none;">v3.0.9</div>
 
 <header>
   <h1>作品ログ</h1>
@@ -545,7 +545,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.8</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.0.9</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -874,7 +874,8 @@
   <div class="bulk-folder-sheet">
     <h3>フォルダーを選択</h3>
     <div id="bulk-folder-list"></div>
-    <button class="folder-choice-btn" id="bulk-folder-cancel-btn" style="margin-top:8px;border-style:dashed;color:var(--ink3);">キャンセル</button>
+    <button class="folder-choice-btn" id="bulk-folder-new-btn" style="margin-top:4px;border-style:dashed;color:var(--accent2);">＋ 新しいフォルダーを作成</button>
+    <button class="folder-choice-btn" id="bulk-folder-cancel-btn" style="margin-top:4px;border-style:dashed;color:var(--ink3);">キャンセル</button>
   </div>
 </div>
 
@@ -3356,6 +3357,34 @@
   });
 
   // フォルダー選択モーダル「キャンセル」
+  el('bulk-folder-new-btn').addEventListener('click', function() {
+    el('bulk-folder-modal').classList.remove('open');
+    // フォルダー作成後に選択されたアイテムをそのフォルダーに追加するコールバックを設定
+    var pendingIds = Array.from(selectedIds);
+    openFolderModal(null);
+    // saveFolderItemをフック: 保存後に自動でアイテムを追加
+    var origSave = saveFolderItem;
+    saveFolderItem = function() {
+      origSave();
+      saveFolderItem = origSave; // フックを元に戻す
+      // 最後に追加されたフォルダーを探してアイテムを追加
+      var newFolder = items[0]; // unshiftしているので先頭
+      if (newFolder && newFolder.cardType === 'folder') {
+        pendingIds.forEach(function(id) {
+          items.forEach(function(f){
+            if (f.cardType==='folder' && String(f.id)!==String(newFolder.id))
+              f.childIds = (f.childIds||[]).filter(function(c){ return c!==id; });
+          });
+          if (!newFolder.childIds) newFolder.childIds = [];
+          if (newFolder.childIds.indexOf(id) === -1) newFolder.childIds.push(id);
+        });
+        saveData();
+        showToast(pendingIds.length + '件を「' + newFolder.name + '」に追加しました', 'success');
+        exitSelectMode();
+        renderGrid();
+      }
+    };
+  });
   el('bulk-folder-cancel-btn').addEventListener('click', function() {
     el('bulk-folder-modal').classList.remove('open');
   });
