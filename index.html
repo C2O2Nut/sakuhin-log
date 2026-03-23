@@ -593,13 +593,11 @@
     border: none; border-top: 1px solid var(--border); margin: 4px 0 16px;
   }
 
-  /* ジャンルエリア内の絞り込みボタン: PCでは非表示、スマホで表示 */
+  /* ジャンルエリア内の絞り込みボタン: 常に表示 */
   .sm-filter-genre-btn {
-    display: none;
+    display: flex;
+    align-items: center;
     flex-shrink: 0;
-  }
-  @media (max-width: 600px) {
-    .sm-filter-genre-btn { display: flex; align-items: center; }
   }
 
   /* ホーム画面 */
@@ -741,6 +739,20 @@
   .home-genre-dot {
     width:9px; height:9px; border-radius:50%; flex-shrink:0;
   }
+
+  /* 設定ページ */
+  .settings-section { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:14px; }
+  .settings-section-title { font-size:11px; font-weight:500; color:var(--ink3); letter-spacing:0.06em; margin-bottom:12px; }
+  .settings-action-btn { display:block; width:100%; padding:11px 14px; background:none; border:none; border-radius:8px; font-family:'Noto Sans JP',sans-serif; font-size:14px; color:var(--ink); cursor:pointer; text-align:left; transition:background 0.12s; margin-bottom:2px; }
+  .settings-action-btn:hover { background:var(--surface2); }
+  .settings-action-btn.danger { color:#c94a2a; }
+  .genre-manage-row { display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid var(--border); }
+  .genre-manage-row:last-child { border-bottom:none; }
+  .genre-manage-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .genre-manage-name { flex:1; font-size:14px; color:var(--ink); }
+  .genre-manage-count { font-size:12px; color:var(--ink3); }
+  .genre-manage-del { background:none; border:none; color:var(--ink3); cursor:pointer; font-size:16px; padding:0 4px; transition:color 0.15s; }
+  .genre-manage-del:hover { color:#c94a2a; }
 </style>
 </head>
 <body>
@@ -752,7 +764,7 @@
 <header>
   <h1>作品ログ</h1>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.2.3</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.2.4</span>
     <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
   </div>
 </header>
@@ -773,7 +785,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.2.3</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.2.4</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -846,6 +858,40 @@
 <div class="count-bar" id="count-bar">0 件</div>
 
 <div id="home-view"><div id="home-daily"></div></div>
+
+<div id="settings-view" style="display:none; padding:20px 16px 80px; max-width:600px; margin:0 auto;">
+  <div style="font-family:'Noto Serif JP',serif; font-size:18px; color:var(--ink); margin-bottom:20px;">設定</div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">ジャンル管理</div>
+    <div id="genre-manage-list" style="margin-bottom:12px;"></div>
+    <button class="settings-action-btn" id="settings-add-genre-btn">＋ ジャンルを追加</button>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">テーマ・カラー</div>
+    <button class="settings-action-btn" id="settings-theme-btn">テーマを変更する</button>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">Google Drive 同期</div>
+    <button class="settings-action-btn" id="settings-drive-login-btn">Googleアカウントでログイン</button>
+    <button class="settings-action-btn" id="settings-drive-save-btn" style="display:none;">Driveに今すぐ保存</button>
+    <button class="settings-action-btn" id="settings-drive-load-btn" style="display:none;">Driveから読み込む</button>
+    <button class="settings-action-btn danger" id="settings-drive-logout-btn" style="display:none;">ログアウト</button>
+    <div id="settings-drive-status" style="font-size:12px;color:var(--ink3);padding:6px 0;"></div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">インポート / エクスポート</div>
+    <button class="settings-action-btn" id="settings-export-btn">JSONでエクスポート</button>
+    <button class="settings-action-btn" id="settings-import-btn">JSONからインポート</button>
+    <button class="settings-action-btn" id="settings-bookmory-btn">bookmoryからインポート</button>
+    <button class="settings-action-btn" id="settings-steam-btn">Steamからインポート</button>
+  </div>
+
+  <div style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);margin-top:24px;" id="settings-version-label">v3.2.4</div>
+</div>
 
 <div class="grid" id="grid-view">
   <div class="empty">
@@ -1082,6 +1128,65 @@
     <div id="bulk-folder-list"></div>
     <button class="folder-choice-btn" id="bulk-folder-new-btn" style="margin-top:4px;border-style:dashed;color:var(--accent2);">＋ 新しいフォルダーを作成</button>
     <button class="folder-choice-btn" id="bulk-folder-cancel-btn" style="margin-top:4px;border-style:dashed;color:var(--ink3);">キャンセル</button>
+  </div>
+</div>
+
+
+<div id="settings-view" style="display:none;padding:20px 16px 80px;max-width:600px;margin:0 auto;">
+  <div style="font-family:'Noto Serif JP',serif;font-size:18px;color:var(--ink);margin-bottom:20px;">設定</div>
+
+  <div style="margin-bottom:8px;font-size:11px;color:var(--ink3);letter-spacing:0.08em;font-weight:500;">データ管理</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;">
+    <div style="padding:10px 14px 6px;font-size:11px;color:var(--ink3);border-bottom:1px solid var(--border);">Google Drive 自動同期</div>
+    <button class="dmenu-btn" id="drive-login-btn2">Googleアカウントでログイン</button>
+    <button class="dmenu-btn" id="drive-save-btn2" style="display:none">Driveに今すぐ保存</button>
+    <button class="dmenu-btn" id="drive-load-btn2" style="display:none">Driveから読み込む</button>
+    <button class="dmenu-btn" id="drive-logout-btn2" style="display:none;color:#c94a2a;">ログアウト</button>
+    <div id="drive-status2" style="padding:6px 14px 8px;font-size:11px;color:var(--ink3);display:none;"></div>
+  </div>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;">
+    <div style="padding:10px 14px 6px;font-size:11px;color:var(--ink3);border-bottom:1px solid var(--border);">インポート</div>
+    <button class="dmenu-btn" id="settings-bookmory-btn">bookmoryからインポート (.bookmory)</button>
+    <button class="dmenu-btn" id="settings-steam-btn">Steamからインポート</button>
+  </div>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;">
+    <div style="padding:10px 14px 6px;font-size:11px;color:var(--ink3);border-bottom:1px solid var(--border);">バックアップ</div>
+    <button class="dmenu-btn" id="settings-export-btn">JSONでエクスポート</button>
+    <button class="dmenu-btn" id="settings-import-btn">JSONからインポート</button>
+  </div>
+
+  <div style="margin-bottom:8px;font-size:11px;color:var(--ink3);letter-spacing:0.08em;font-weight:500;">カスタマイズ</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;">
+    <button class="dmenu-btn" id="settings-theme-btn">テーマ・色を変える</button>
+    <button class="dmenu-btn" id="settings-genres-btn" style="border-top:1px solid var(--border);">ジャンルの管理</button>
+  </div>
+
+  <div style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);margin-top:8px;" id="settings-version-label"></div>
+</div>
+
+<!-- ジャンル管理モーダル -->
+<div class="modal-overlay" id="genre-manage-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>ジャンルの管理</h2>
+      <button class="modal-close" id="genre-manage-close">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="genre-manage-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"></div>
+      <div style="border-top:1px solid var(--border);padding-top:14px;">
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;">新しいジャンルを追加</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="genre-new-name" placeholder="ジャンル名" style="flex:1;padding:8px 11px;border:1.5px solid var(--border);border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:14px;background:var(--bg);color:var(--ink);outline:none;">
+          <input type="color" id="genre-new-color" value="#888888" style="height:36px;width:44px;padding:2px;border:1.5px solid var(--border);border-radius:4px;cursor:pointer;">
+          <button type="button" id="genre-new-add-btn" class="btn-save" style="white-space:nowrap;">追加</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" id="genre-manage-cancel">閉じる</button>
+    </div>
   </div>
 </div>
 
@@ -3477,6 +3582,51 @@
     }
   }
 
+
+  function renderSettingsPage() {
+    // バージョン表示
+    var vl = el('settings-version-label');
+    if (vl) vl.textContent = 'v3.2.4';
+
+    // Drive状態を反映
+    el('settings-drive-login-btn').style.display = driveLoggedIn ? 'none' : 'block';
+    el('settings-drive-save-btn').style.display = driveLoggedIn ? 'block' : 'none';
+    el('settings-drive-load-btn').style.display = driveLoggedIn ? 'block' : 'none';
+    el('settings-drive-logout-btn').style.display = driveLoggedIn ? 'block' : 'none';
+
+    // ジャンル一覧
+    var list = el('genre-manage-list');
+    list.innerHTML = '';
+    var allG = getAllGenres();
+    allG.forEach(function(g) {
+      var name = typeof g === 'string' ? g : g.name;
+      var color = genreDefaultColor(name);
+      var count = items.filter(function(x){ return x.genre === name; }).length;
+      var isDefault = DEFAULT_GENRES.indexOf(name) !== -1;
+      var row = document.createElement('div');
+      row.className = 'genre-manage-row';
+      row.innerHTML = '<span class="genre-manage-dot" style="background:'+color+'"></span>'
+        + '<span class="genre-manage-name">'+escapeHTML(name)+'</span>'
+        + '<span class="genre-manage-count">'+count+'件</span>';
+      var delBtn = document.createElement('button');
+      delBtn.className = 'genre-manage-del' + (isDefault ? ' disabled' : '');
+      delBtn.textContent = '×';
+      delBtn.title = isDefault ? 'デフォルトジャンルは削除できません' : '削除';
+      if (!isDefault) {
+        delBtn.addEventListener('click', function() {
+          if (count > 0 && !confirm('「'+name+'」を削除します。このジャンルの'+count+'件の作品はジャンルが空になります。続けますか？')) return;
+          customGenres = customGenres.filter(function(cg){ return (typeof cg==='string'?cg:cg.name) !== name; });
+          saveGenres();
+          rebuildGenreUI();
+          renderSettingsPage();
+          showToast('ジャンル「'+name+'」を削除しました');
+        });
+      }
+      row.appendChild(delBtn);
+      list.appendChild(row);
+    });
+  }
+
   // ============================================================
   // v3 関数定義
   // ============================================================
@@ -3586,7 +3736,9 @@
     el('grid-view').style.display='none';
     el('timeline-view').style.display='none';
     el('home-view').style.display='none';
-    el('count-bar').style.display='block';
+    var sv=el('settings-view'); if(sv) sv.style.display='none';
+    el('count-bar').style.display='none';
+    document.querySelector('.toolbar').style.display='none';
     if(page==='list'){
       var b=el('nav-list-btn'); if(b) b.classList.add('active');
       document.querySelector('.toolbar').style.display='';
@@ -3596,8 +3748,6 @@
     } else if(page==='home'){
       var b=el('nav-home-btn'); if(b) b.classList.add('active');
       el('home-view').style.display='block';
-      el('count-bar').style.display='none';
-      document.querySelector('.toolbar').style.display='none';
       renderHome();
     } else if(page==='timeline'){
       var b=el('nav-tl-btn'); if(b) b.classList.add('active');
@@ -3605,6 +3755,12 @@
       el('count-bar').style.display='block';
       el('timeline-view').style.display='block';
       currentView='timeline'; applyViewBtns('timeline'); renderTimeline();
+    } else if(page==='settings'){
+      var b=el('nav-settings-btn'); if(b) b.classList.add('active');
+      var sv=el('settings-view'); if(sv) sv.style.display='block';
+      var vl=el('version-label'), sl=el('settings-version-label');
+      if(vl&&sl) sl.textContent=vl.textContent;
+      syncSettingsDriveUI();
     }
   }
 
@@ -3862,10 +4018,73 @@
   });
   el('nav-home-btn').addEventListener('click', function(){ setPage('home'); });
   el('nav-tl-btn').addEventListener('click', function(){ setPage('timeline'); });
-  el('nav-settings-btn').addEventListener('click', function(e){
-    e.stopPropagation();
-    var m=el('data-menu'); m.style.display=m.style.display==='block'?'none':'block';
+  el('nav-settings-btn').addEventListener('click', function(){ setPage('settings'); });
+
+  // 設定ページ
+  function syncSettingsDriveUI() {
+    el('drive-login-btn2').style.display  = driveLoggedIn ? 'none'  : 'block';
+    el('drive-save-btn2').style.display   = driveLoggedIn ? 'block' : 'none';
+    el('drive-load-btn2').style.display   = driveLoggedIn ? 'block' : 'none';
+    el('drive-logout-btn2').style.display = driveLoggedIn ? 'block' : 'none';
+  }
+  el('drive-login-btn2').addEventListener('click', function(){ el('drive-login-btn').click(); setTimeout(syncSettingsDriveUI,1000); });
+  el('drive-save-btn2').addEventListener('click', function(){ el('drive-save-btn').click(); });
+  el('drive-load-btn2').addEventListener('click', function(){ el('drive-load-btn').click(); });
+  el('drive-logout-btn2').addEventListener('click', function(){ el('drive-logout-btn').click(); syncSettingsDriveUI(); });
+  el('settings-bookmory-btn').addEventListener('click', function(){ el('bookmory-import-btn').click(); });
+  el('settings-steam-btn').addEventListener('click', function(){ el('steam-import-btn').click(); });
+  el('settings-export-btn').addEventListener('click', function(){ el('export-btn').click(); });
+  el('settings-import-btn').addEventListener('click', function(){ el('import-btn').click(); });
+  el('settings-theme-btn').addEventListener('click', function(){ el('theme-btn').click(); });
+  el('settings-genres-btn').addEventListener('click', openGenreManage);
+  el('genre-manage-close').addEventListener('click', function(){ el('genre-manage-modal').classList.remove('open'); });
+  el('genre-manage-cancel').addEventListener('click', function(){ el('genre-manage-modal').classList.remove('open'); });
+  el('genre-new-add-btn').addEventListener('click', function() {
+    var name = el('genre-new-name').value.trim();
+    var color = el('genre-new-color').value;
+    if (!name) { showToast('ジャンル名を入力してください','error'); return; }
+    if (getAllGenres().some(function(g){ return (typeof g==='string'?g:g.name)===name; })) {
+      showToast('そのジャンルはすでに存在します','error'); return;
+    }
+    if (addGenre(name, color)) {
+      el('genre-new-name').value='';
+      showToast('ジャンル「'+name+'」を追加しました','success');
+      openGenreManage();
+    }
   });
+
+  function openGenreManage() {
+    var list = el('genre-manage-list');
+    list.innerHTML = '';
+    var DEFAULTS = ['ゲーム','映画','小説','マンガ','アニメ','音楽','心情','その他'];
+    getAllGenres().forEach(function(g) {
+      var name = typeof g==='string' ? g : g.name;
+      var color = typeof g==='string' ? '#888' : (g.color||'#888');
+      var isDefault = DEFAULTS.indexOf(name) !== -1;
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:8px;';
+      row.innerHTML = '<span style="width:12px;height:12px;border-radius:50%;background:'+color+';flex-shrink:0;display:inline-block;"></span>'
+        + '<span style="flex:1;font-size:14px;">'+escapeHTML(name)+'</span>'
+        + (isDefault
+          ? '<span style="font-size:11px;color:var(--ink3);">デフォルト</span>'
+          : '<button type="button" data-del="'+escapeHTML(name)+'" style="padding:4px 12px;border-radius:6px;border:1.5px solid #c94a2a;background:none;color:#c94a2a;font-size:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">削除</button>');
+      var delBtn = row.querySelector('button[data-del]');
+      if (delBtn) {
+        delBtn.addEventListener('click', function() {
+          var n = this.getAttribute('data-del');
+          if (!confirm('「'+n+'」を削除しますか？
+このジャンルのカードは「その他」になります。')) return;
+          items.forEach(function(item){ if(item.genre===n) item.genre='その他'; });
+          customGenres = customGenres.filter(function(cg){ return cg.name!==n; });
+          saveGenres(); saveData(); rebuildGenreUI();
+          showToast('「'+n+'」を削除しました','success');
+          openGenreManage();
+        });
+      }
+      list.appendChild(row);
+    });
+    el('genre-manage-modal').classList.add('open');
+  }
 
   el('add-type-modal').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
   el('add-type-normal').addEventListener('click', function(){ el('add-type-modal').classList.remove('open'); openModal(null); });
@@ -3933,6 +4152,75 @@
   el('data-menu').style.right = '16px';
 
   refreshFolderSelect('');
+
+  // ===== 設定ページイベント =====
+  el('settings-add-genre-btn').addEventListener('click', function() {
+    var name = prompt('新しいジャンル名を入力してください');
+    if (!name) return;
+    name = name.trim();
+    if (!name || getAllGenres().some(function(g){ return (typeof g==='string'?g:g.name)===name; })) {
+      showToast('そのジャンルはすでに存在します', 'error'); return;
+    }
+    var colorInput = document.createElement('input');
+    colorInput.type='color'; colorInput.value='#888888';
+    colorInput.style.cssText='position:fixed;opacity:0;pointer-events:none;';
+    document.body.appendChild(colorInput);
+    colorInput.addEventListener('change', function() {
+      document.body.removeChild(colorInput);
+      if (addGenre(name, colorInput.value)) {
+        renderSettingsPage();
+        showToast('ジャンル「'+name+'」を追加しました', 'success');
+      }
+    });
+    setTimeout(function(){ colorInput.click(); }, 100);
+  });
+
+  el('settings-theme-btn').addEventListener('click', function() {
+    syncThemeInputs(); el('theme-modal').classList.add('open');
+  });
+
+  el('settings-drive-login-btn').addEventListener('click', function() {
+    if (!tokenClient) { initGoogleAuth(); setTimeout(function(){ if(tokenClient) tokenClient.requestAccessToken(); }, 800); return; }
+    tokenClient.requestAccessToken();
+  });
+  el('settings-drive-save-btn').addEventListener('click', function() {
+    if (!accessToken) { if(tokenClient) tokenClient.requestAccessToken(); return; }
+    driveSetStatus('保存中…');
+    driveFindFile(function(){ driveSaveRaw(function(ok){ driveSetStatus(ok?'保存しました':'保存失敗'); el('settings-drive-status').textContent=ok?'保存しました':'保存失敗'; }); });
+  });
+  el('settings-drive-load-btn').addEventListener('click', function() {
+    if (!accessToken) { if(tokenClient) tokenClient.requestAccessToken(); return; }
+    driveFileId=null; localStorage.removeItem('drive-file-id');
+    driveFindFile(function(){
+      if(!driveFileId){el('settings-drive-status').textContent='データが見つかりません';return;}
+      driveLoadRaw(function(loaded){
+        if(!loaded){el('settings-drive-status').textContent='読み込み失敗';return;}
+        if(!confirm('Driveのデータ（'+loaded.length+'件）で上書きしますか？'))return;
+        items=loaded; _origSaveData();
+        if(currentView==='grid') renderGrid(); else renderTimeline();
+        el('settings-drive-status').textContent='読み込み完了: '+loaded.length+'件';
+        showToast('読み込み完了', 'success');
+      });
+    });
+  });
+  el('settings-drive-logout-btn').addEventListener('click', function() {
+    if(accessToken && typeof google!=='undefined') try{google.accounts.oauth2.revoke(accessToken,function(){});}catch(e){}
+    accessToken=null; driveFileId=null;
+    localStorage.removeItem('drive-file-id'); localStorage.removeItem('drive-logged-in');
+    driveSetLoggedIn(false); driveSetStatus('');
+    renderSettingsPage();
+  });
+
+  el('settings-export-btn').addEventListener('click', function() {
+    var json=JSON.stringify(items,null,2);
+    var blob=new Blob([json],{type:'application/json;charset=utf-8'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    var d=new Date(); a.download='sakuhin-log-'+d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)+'.json';
+    document.body.appendChild(a); a.click(); setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(a.href);},100);
+  });
+  el('settings-import-btn').addEventListener('click', function() { el('import-file').click(); });
+  el('settings-bookmory-btn').addEventListener('click', function() { el('bookmory-file').click(); });
+  el('settings-steam-btn').addEventListener('click', function() { el('steam-modal').classList.add('open'); });
 
   // ===== フォルダー操作イベント =====
 
