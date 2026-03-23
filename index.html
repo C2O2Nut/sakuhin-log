@@ -117,7 +117,6 @@
   .badge-小説   { background: #5a7a3a; }
   .badge-マンガ { background: #8c5a2a; }
   .badge-アニメ { background: #6a2a8c; }
-  .badge-音楽   { background: #1a7a6a; }
   .badge-心情   { background: #8c3a6a; }
   .badge-その他 { background: #555; }
   .status-dot {
@@ -764,7 +763,7 @@
 <header>
   <h1>作品ログ</h1>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.2.5</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.2.8</span>
     <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
   </div>
 </header>
@@ -785,7 +784,8 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.2.5</div>
+  <button class="dmenu-btn" id="genre-manage-btn">ジャンルを管理する</button>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.2.8</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -890,7 +890,7 @@
     <button class="settings-action-btn" id="settings-steam-btn">Steamからインポート</button>
   </div>
 
-  <div style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);margin-top:24px;" id="settings-version-label">v3.2.5</div>
+  <div style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);margin-top:24px;" id="settings-version-label">v3.2.8</div>
 </div>
 
 <div class="grid" id="grid-view">
@@ -1190,6 +1190,22 @@
   </div>
 </div>
 
+
+<div class="modal-overlay" id="genre-manage-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>ジャンルを管理</h2>
+      <button class="modal-close" id="genre-manage-close">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;">デフォルトのジャンルは削除できません。カスタムジャンルのみ削除可能です。</div>
+      <div id="genre-manage-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" id="genre-manage-cancel">閉じる</button>
+    </div>
+  </div>
+</div>
 <!-- ========== v3 HTML ========== -->
 <!-- 編集ミニパネル -->
 <div id="edit-mini-panel">
@@ -1303,12 +1319,14 @@
   // ===== データ =====
   var items = [];
   try { items = JSON.parse(localStorage.getItem('sakuhin-log') || '[]'); } catch(e) { items = []; }
+  // 音楽ジャンルを「その他」に移行
+  items.forEach(function(x){ if(x.genre==='音楽') x.genre='その他'; });
 
   // ===== ジャンル管理 =====
-  var DEFAULT_GENRES = ['ゲーム','映画','小説','マンガ','アニメ','音楽','心情','その他'];
+  var DEFAULT_GENRES = ['ゲーム','映画','小説','マンガ','アニメ','心情','その他'];
   var DEFAULT_GENRE_COLORS = {
     'ゲーム':'#2a6e8c','映画':'#c94a2a','小説':'#5a7a3a','マンガ':'#8c5a2a',
-    'アニメ':'#6a2a8c','音楽':'#1a7a6a','心情':'#8c3a6a','その他':'#555'
+    'アニメ':'#6a2a8c','心情':'#8c3a6a','その他':'#555'
   };
   var customGenres = [];
   try { customGenres = JSON.parse(localStorage.getItem('sakuhin-genres') || '[]'); } catch(e) {}
@@ -3586,7 +3604,7 @@
   function renderSettingsPage() {
     // バージョン表示
     var vl = el('settings-version-label');
-    if (vl) vl.textContent = 'v3.2.5';
+    if (vl) vl.textContent = 'v3.2.8';
 
     // Drive状態を反映
     el('settings-drive-login-btn').style.display = driveLoggedIn ? 'none' : 'block';
@@ -4151,6 +4169,66 @@
   el('data-menu').style.right = '16px';
 
   refreshFolderSelect('');
+
+  // ===== ジャンル管理 =====
+  el('genre-manage-btn').addEventListener('click', function() {
+    el('data-menu').style.display = 'none';
+    openGenreManage();
+  });
+  el('genre-manage-close').addEventListener('click', function() {
+    el('genre-manage-modal').classList.remove('open');
+  });
+  el('genre-manage-cancel').addEventListener('click', function() {
+    el('genre-manage-modal').classList.remove('open');
+  });
+
+  function openGenreManage() {
+    var list = el('genre-manage-list');
+    list.innerHTML = '';
+    var DEFAULT_GENRES_SET = ['ゲーム','映画','小説','マンガ','アニメ','心情','その他'];
+    getAllGenres().forEach(function(g) {
+      var name = typeof g === 'string' ? g : g.name;
+      var isDefault = DEFAULT_GENRES_SET.indexOf(name) !== -1;
+      var color = genreDefaultColor(name);
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--border);';
+      var dot = document.createElement('span');
+      dot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:'+color+';flex-shrink:0;';
+      var nameEl = document.createElement('span');
+      nameEl.style.cssText = 'flex:1;font-size:14px;color:var(--ink);';
+      nameEl.textContent = name;
+      var countEl = document.createElement('span');
+      var cnt = items.filter(function(x){ return x.genre === name; }).length;
+      countEl.style.cssText = 'font-family:monospace;font-size:11px;color:var(--ink3);';
+      countEl.textContent = cnt + '件';
+      row.appendChild(dot);
+      row.appendChild(nameEl);
+      row.appendChild(countEl);
+      if (!isDefault) {
+        var delBtn = document.createElement('button');
+        delBtn.style.cssText = 'padding:4px 12px;border-radius:6px;border:1.5px solid #c94a2a;background:none;color:#c94a2a;font-size:12px;cursor:pointer;';
+        delBtn.textContent = '削除';
+        delBtn.setAttribute('data-del', name);
+        delBtn.addEventListener('click', function() {
+          var n = this.getAttribute('data-del');
+          if (!confirm('「'+n+'」を削除しますか？このジャンルのカードは「その他」になります。')) return;
+          items.forEach(function(item){ if(item.genre===n) item.genre='その他'; });
+          customGenres = customGenres.filter(function(cg){ return cg.name!==n; });
+          saveGenres(); saveData(); rebuildGenreUI();
+          showToast('「'+n+'」を削除しました','success');
+          openGenreManage();
+        });
+        row.appendChild(delBtn);
+      } else {
+        var lockEl = document.createElement('span');
+        lockEl.style.cssText = 'font-size:11px;color:var(--ink3);';
+        lockEl.textContent = 'デフォルト';
+        row.appendChild(lockEl);
+      }
+      list.appendChild(row);
+    });
+    el('genre-manage-modal').classList.add('open');
+  }
 
   // ===== 設定ページイベント =====
   el('settings-add-genre-btn').addEventListener('click', function() {
