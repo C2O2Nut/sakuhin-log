@@ -601,6 +601,146 @@
   @media (max-width: 600px) {
     .sm-filter-genre-btn { display: flex; align-items: center; }
   }
+
+  /* ホーム画面 */
+  #home-view { display:none; padding:16px 16px 16px; }
+  .home-section { margin-bottom:24px; }
+  .home-section-title {
+    font-family:'Noto Serif JP',serif; font-size:15px; font-weight:700;
+    color:var(--ink); margin-bottom:10px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .home-section-title .genre-dot {
+    width:9px; height:9px; border-radius:50%; flex-shrink:0;
+  }
+  .home-cards-row {
+    display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;
+    scrollbar-width:none;
+  }
+  .home-cards-row::-webkit-scrollbar { display:none; }
+  .home-card {
+    width:110px; flex-shrink:0; background:var(--surface);
+    border:1px solid var(--border); border-radius:8px;
+    overflow:hidden; cursor:pointer;
+    box-shadow:0 2px 8px var(--shadow);
+    transition:transform 0.15s, box-shadow 0.15s;
+  }
+  .home-card:hover { transform:translateY(-3px); box-shadow:0 4px 16px var(--shadow); }
+  .home-card-img {
+    width:100%; height:80px; background:var(--surface2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:30px; overflow:hidden;
+  }
+  .home-card-img img { width:100%; height:100%; object-fit:cover; }
+  .home-card-name {
+    padding:6px 7px; font-size:11px; font-weight:500;
+    line-height:1.35; overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  }
+  .home-card-stars { padding:0 7px 6px; font-size:10px; color:#d4920a; }
+  .home-empty { color:var(--ink3); font-size:13px; padding:12px 0; }
+
+  /* ホーム画面 リニューアル */
+  #home-view {
+    display:none; padding:16px 16px 16px;
+    max-width:600px; margin:0 auto;
+  }
+  .home-greeting {
+    font-family:'Noto Serif JP',serif; font-size:18px;
+    color:var(--ink); margin-bottom:4px;
+  }
+  .home-date-label {
+    font-family:'DM Mono',monospace; font-size:11px;
+    color:var(--ink3); margin-bottom:20px;
+  }
+  /* 統計カード */
+  .home-stats-row {
+    display:grid; grid-template-columns:1fr 1fr 1fr;
+    gap:8px; margin-bottom:20px;
+  }
+  .home-stat-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:12px 10px;
+    text-align:center;
+  }
+  .home-stat-num {
+    font-family:'DM Mono',monospace; font-size:22px;
+    font-weight:500; color:var(--ink); line-height:1.2;
+  }
+  .home-stat-label {
+    font-size:10px; color:var(--ink3); margin-top:3px;
+  }
+  /* セクション */
+  .home-section { margin-bottom:24px; }
+  .home-section-header {
+    display:flex; align-items:center; gap:8px;
+    margin-bottom:10px;
+  }
+  .home-section-title {
+    font-family:'Noto Serif JP',serif; font-size:14px;
+    font-weight:700; color:var(--ink);
+  }
+  .home-section-sub {
+    font-family:'DM Mono',monospace; font-size:10px;
+    color:var(--ink3); margin-left:auto;
+  }
+  /* ランダムカード横スクロール */
+  .home-cards-row {
+    display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;
+    scrollbar-width:none;
+  }
+  .home-cards-row::-webkit-scrollbar { display:none; }
+  .home-card {
+    width:110px; flex-shrink:0; background:var(--surface);
+    border:1px solid var(--border); border-radius:8px;
+    overflow:hidden; cursor:pointer;
+    box-shadow:0 2px 8px var(--shadow);
+    transition:transform 0.15s;
+  }
+  .home-card:hover { transform:translateY(-3px); }
+  .home-card-img {
+    width:100%; height:76px; background:var(--surface2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:28px; overflow:hidden;
+  }
+  .home-card-img img { width:100%; height:100%; object-fit:cover; }
+  .home-card-name {
+    padding:5px 7px; font-size:10px; font-weight:500;
+    line-height:1.35; overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  }
+  .home-card-stars { padding:0 7px 5px; font-size:10px; color:#d4920a; }
+  /* 今月追加リスト */
+  .home-monthly-item {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 0; border-bottom:1px solid var(--border);
+    cursor:pointer; transition:background 0.1s;
+  }
+  .home-monthly-item:last-child { border-bottom:none; }
+  .home-monthly-item:hover { background:var(--surface2); margin:0 -8px; padding:8px; border-radius:6px; }
+  .home-monthly-dot {
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
+  }
+  .home-monthly-name {
+    flex:1; font-size:13px; color:var(--ink);
+    overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  }
+  .home-monthly-genre {
+    font-size:11px; color:var(--ink3); flex-shrink:0;
+  }
+  .home-monthly-date {
+    font-family:'DM Mono',monospace; font-size:10px;
+    color:var(--ink3); flex-shrink:0;
+  }
+  /* 空状態 */
+  .home-empty {
+    color:var(--ink3); font-size:13px; padding:12px 0;
+    text-align:center;
+  }
+  /* ジャンル別ドット */
+  .home-genre-dot {
+    width:9px; height:9px; border-radius:50%; flex-shrink:0;
+  }
 </style>
 </head>
 <body>
@@ -612,7 +752,7 @@
 <header>
   <h1>作品ログ</h1>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.1.6</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.1.9</span>
     <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
   </div>
 </header>
@@ -633,7 +773,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.6</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.9</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -705,7 +845,7 @@
 <div id="folder-breadcrumb"><button id="folder-back-btn">← 戻る</button><span style="color:var(--ink3);">フォルダー：</span><strong id="folder-name-label"></strong></div>
 <div class="count-bar" id="count-bar">0 件</div>
 
-<div id="home-view"><h2>ホーム</h2><p style="font-size:14px;">準備中</p></div>
+<div id="home-view"><div id="home-daily"></div></div>
 
 <div class="grid" id="grid-view">
   <div class="empty">
@@ -3197,6 +3337,147 @@
   }
 
 
+
+  // ===== ホーム画面 =====
+  function renderHome() {
+    var container = el('home-daily');
+    container.innerHTML = '';
+
+    var today = new Date();
+    var seed = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
+    function seededRand(s) { var x=Math.sin(s)*10000; return x-Math.floor(x); }
+
+    var normalItems = items.filter(function(x){
+      return x.cardType !== 'music' && x.cardType !== 'mood' && x.cardType !== 'folder';
+    });
+
+    // ===== 挨拶・日付 =====
+    var days = ['日','月','火','水','木','金','土'];
+    var greeting = document.createElement('div');
+    greeting.className = 'home-greeting';
+    var h = today.getHours();
+    var greetText = h < 12 ? 'おはようございます' : h < 18 ? 'こんにちは' : 'こんばんは';
+    greeting.textContent = greetText;
+    container.appendChild(greeting);
+    var dateLabel = document.createElement('div');
+    dateLabel.className = 'home-date-label';
+    dateLabel.textContent = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日（' + days[today.getDay()] + '）';
+    container.appendChild(dateLabel);
+
+    // ===== 今月の統計 =====
+    var thisYear = today.getFullYear(), thisMonth = today.getMonth();
+    var monthlyItems = normalItems.filter(function(x){
+      var d = new Date(x.updatedAt || 0);
+      return d.getFullYear()===thisYear && d.getMonth()===thisMonth;
+    });
+    var totalStars = monthlyItems.reduce(function(s,x){ return s+(x.stars||0); }, 0);
+    var completedCount = monthlyItems.filter(function(x){ return x.status==='完了'; }).length;
+
+    var statsRow = document.createElement('div');
+    statsRow.className = 'home-stats-row home-section';
+    var statsData = [
+      { num: monthlyItems.length, label: '今月追加' },
+      { num: completedCount, label: '今月完了' },
+      { num: totalStars, label: '獲得した星' },
+    ];
+    statsData.forEach(function(s) {
+      var card = document.createElement('div');
+      card.className = 'home-stat-card';
+      card.innerHTML = '<div class="home-stat-num">' + s.num + '</div>'
+        + '<div class="home-stat-label">' + s.label + '</div>';
+      statsRow.appendChild(card);
+    });
+    container.appendChild(statsRow);
+
+    // ===== 今月追加したカード一覧 =====
+    if (monthlyItems.length > 0) {
+      var monthSec = document.createElement('div');
+      monthSec.className = 'home-section';
+      var monthHeader = document.createElement('div');
+      monthHeader.className = 'home-section-header';
+      monthHeader.innerHTML = '<span class="home-section-title">今月追加した作品</span>'
+        + '<span class="home-section-sub">' + (today.getMonth()+1) + '月</span>';
+      monthSec.appendChild(monthHeader);
+      // 新しい順
+      var sortedMonthly = monthlyItems.slice().sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
+      sortedMonthly.forEach(function(item) {
+        var row = document.createElement('div');
+        row.className = 'home-monthly-item';
+        var color = genreDefaultColor(item.genre||'その他');
+        var d = new Date(item.updatedAt||0);
+        var dateStr = (d.getMonth()+1) + '/' + d.getDate();
+        row.innerHTML = '<span class="home-monthly-dot" style="background:'+color+'"></span>'
+          + '<span class="home-monthly-name">'+escapeHTML(item.name)+'</span>'
+          + '<span class="home-monthly-genre">'+escapeHTML(item.genre||'')+'</span>'
+          + '<span class="home-monthly-date">'+dateStr+'</span>';
+        row.addEventListener('click', (function(id){ return function(){ openModal(id); setPage('list'); }; })(item.id));
+        monthSec.appendChild(row);
+      });
+      container.appendChild(monthSec);
+    }
+
+    // ===== 今日のピックアップ（ランダム3ジャンル） =====
+    var genreMap = {};
+    normalItems.forEach(function(item){
+      var g = item.genre||'その他';
+      if (!genreMap[g]) genreMap[g] = [];
+      genreMap[g].push(item);
+    });
+    var genres = Object.keys(genreMap).filter(function(g){ return genreMap[g].length>0; });
+    if (genres.length > 0) {
+      var pickupSec = document.createElement('div');
+      pickupSec.className = 'home-section';
+      var pickupHeader = document.createElement('div');
+      pickupHeader.className = 'home-section-header';
+      pickupHeader.innerHTML = '<span class="home-section-title">今日のピックアップ</span>'
+        + '<span class="home-section-sub">毎日更新</span>';
+      pickupSec.appendChild(pickupHeader);
+
+      var shuffled = genres.slice();
+      for (var i=shuffled.length-1;i>0;i--){
+        var j=Math.floor(seededRand(seed+i)*(i+1));
+        var tmp=shuffled[i];shuffled[i]=shuffled[j];shuffled[j]=tmp;
+      }
+      var selected = shuffled.slice(0, Math.min(3, shuffled.length));
+
+      selected.forEach(function(genre, gi) {
+        var color = genreDefaultColor(genre);
+        var genreLabel = document.createElement('div');
+        genreLabel.className = 'home-section-header';
+        genreLabel.style.marginTop = gi > 0 ? '14px' : '0';
+        genreLabel.innerHTML = '<span class="home-genre-dot" style="background:'+color+'"></span>'
+          + '<span style="font-size:12px;color:var(--ink2);font-weight:500;">'+escapeHTML(genre)+'</span>';
+        pickupSec.appendChild(genreLabel);
+
+        var cards = genreMap[genre].slice();
+        for (var i=cards.length-1;i>0;i--){
+          var j=Math.floor(seededRand(seed+gi*100+i)*(i+1));
+          var tmp=cards[i];cards[i]=cards[j];cards[j]=tmp;
+        }
+        var show = cards.slice(0, 5);
+        var row = document.createElement('div');
+        row.className = 'home-cards-row';
+        show.forEach(function(item) {
+          var card = document.createElement('div');
+          card.className = 'home-card';
+          card.innerHTML = '<div class="home-card-img">'
+            + (item.photo?'<img src="'+item.photo+'" alt="">':'<span>'+genreIcon(item.genre)+'</span>')
+            + '</div>'
+            + '<div class="home-card-name">'+escapeHTML(item.name)+'</div>'
+            + '<div class="home-card-stars">'+starsHTML(item.stars)+'</div>';
+          card.addEventListener('click', (function(id){ return function(){ openModal(id); }; })(item.id));
+          row.appendChild(card);
+        });
+        pickupSec.appendChild(row);
+      });
+      container.appendChild(pickupSec);
+    }
+
+    if (normalItems.length === 0) {
+      container.innerHTML += '<p class="home-empty">作品を追加するとここに表示されます</p>';
+    }
+  }
+
   // ============================================================
   // v3 関数定義
   // ============================================================
@@ -3309,14 +3590,20 @@
     el('count-bar').style.display='block';
     if(page==='list'){
       var b=el('nav-list-btn'); if(b) b.classList.add('active');
+      document.querySelector('.toolbar').style.display='';
+      el('count-bar').style.display='block';
       el('grid-view').style.display='';
       currentView='grid'; applyViewBtns('grid'); renderGrid();
     } else if(page==='home'){
       var b=el('nav-home-btn'); if(b) b.classList.add('active');
       el('home-view').style.display='block';
       el('count-bar').style.display='none';
+      document.querySelector('.toolbar').style.display='none';
+      renderHome();
     } else if(page==='timeline'){
       var b=el('nav-tl-btn'); if(b) b.classList.add('active');
+      document.querySelector('.toolbar').style.display='';
+      el('count-bar').style.display='block';
       el('timeline-view').style.display='block';
       currentView='timeline'; applyViewBtns('timeline'); renderTimeline();
     }
