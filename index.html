@@ -752,7 +752,7 @@
 <header>
   <h1>作品ログ</h1>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.1.9</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.2.2</span>
     <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
   </div>
 </header>
@@ -773,7 +773,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.9</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.2.2</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -1120,8 +1120,8 @@
 </div>
 
 <div id="bottom-nav">
-  <button class="nav-btn active" id="nav-list-btn"><span class="nav-icon">▦</span><span>一覧</span></button>
   <button class="nav-btn" id="nav-home-btn"><span class="nav-icon">⌂</span><span>ホーム</span></button>
+  <button class="nav-btn" id="nav-list-btn"><span class="nav-icon">▦</span><span>一覧</span></button>
   <button class="nav-btn" id="nav-tl-btn"><span class="nav-icon">≡</span><span>年表</span></button>
   <button class="nav-btn" id="nav-settings-btn"><span class="nav-icon">⚙</span><span>設定</span></button>
 </div>
@@ -3353,16 +3353,74 @@
 
     // ===== 挨拶・日付 =====
     var days = ['日','月','火','水','木','金','土'];
-    var greeting = document.createElement('div');
-    greeting.className = 'home-greeting';
     var h = today.getHours();
     var greetText = h < 12 ? 'おはようございます' : h < 18 ? 'こんにちは' : 'こんばんは';
+    var greeting = document.createElement('div');
+    greeting.className = 'home-greeting';
     greeting.textContent = greetText;
     container.appendChild(greeting);
     var dateLabel = document.createElement('div');
     dateLabel.className = 'home-date-label';
     dateLabel.textContent = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日（' + days[today.getDay()] + '）';
     container.appendChild(dateLabel);
+
+    // ===== 今日のピックアップ（挨拶の直下・合計3枚） =====
+    var genreMap = {};
+    normalItems.forEach(function(item){
+      var g = item.genre||'その他';
+      if (!genreMap[g]) genreMap[g] = [];
+      genreMap[g].push(item);
+    });
+    var genres = Object.keys(genreMap).filter(function(g){ return genreMap[g].length>0; });
+
+    if (genres.length > 0) {
+      var pickupSec = document.createElement('div');
+      pickupSec.className = 'home-section';
+      var pickupHeader = document.createElement('div');
+      pickupHeader.className = 'home-section-header';
+      pickupHeader.innerHTML = '<span class="home-section-title">今日のピックアップ</span>'
+        + '<span class="home-section-sub">毎日更新</span>';
+      pickupSec.appendChild(pickupHeader);
+
+      // ジャンルをシャッフルして3つ選ぶ
+      var shuffled = genres.slice();
+      for (var i=shuffled.length-1;i>0;i--){
+        var j=Math.floor(seededRand(seed+i)*(i+1));
+        var tmp=shuffled[i]; shuffled[i]=shuffled[j]; shuffled[j]=tmp;
+      }
+      var selected = shuffled.slice(0, Math.min(3, shuffled.length));
+
+      // 各ジャンルから1枚ずつ選んで横に並べる
+      var row = document.createElement('div');
+      row.className = 'home-cards-row';
+
+      selected.forEach(function(genre, gi) {
+        var cards = genreMap[genre].slice();
+        for (var i=cards.length-1;i>0;i--){
+          var j=Math.floor(seededRand(seed+gi*100+i)*(i+1));
+          var tmp=cards[i]; cards[i]=cards[j]; cards[j]=tmp;
+        }
+        var item = cards[0]; // 1枚だけ
+        var color = genreDefaultColor(genre);
+        var card = document.createElement('div');
+        card.className = 'home-card';
+        card.style.width = '140px';
+        card.style.transition = 'none';
+        card.innerHTML = '<div class="home-card-img" style="height:90px;">'
+          + (item.photo?'<img src="'+item.photo+'" alt="">':'<span>'+genreIcon(item.genre)+'</span>')
+          + '</div>'
+          + '<div style="padding:3px 7px 2px;display:flex;align-items:center;gap:4px;">'
+          + '<span style="width:6px;height:6px;border-radius:50%;background:'+color+';flex-shrink:0;display:inline-block;"></span>'
+          + '<span style="font-size:10px;color:var(--ink3);">'+escapeHTML(genre)+'</span>'
+          + '</div>'
+          + '<div class="home-card-name">'+escapeHTML(item.name)+'</div>'
+          + '<div class="home-card-stars">'+starsHTML(item.stars)+'</div>';
+        card.addEventListener('click', (function(id){ return function(){ openModal(id); }; })(item.id));
+        row.appendChild(card);
+      });
+      pickupSec.appendChild(row);
+      container.appendChild(pickupSec);
+    }
 
     // ===== 今月の統計 =====
     var thisYear = today.getFullYear(), thisMonth = today.getMonth();
@@ -3375,16 +3433,15 @@
 
     var statsRow = document.createElement('div');
     statsRow.className = 'home-stats-row home-section';
-    var statsData = [
+    [
       { num: monthlyItems.length, label: '今月追加' },
-      { num: completedCount, label: '今月完了' },
-      { num: totalStars, label: '獲得した星' },
-    ];
-    statsData.forEach(function(s) {
+      { num: completedCount,      label: '今月完了' },
+      { num: totalStars,          label: '獲得した星' },
+    ].forEach(function(s) {
       var card = document.createElement('div');
       card.className = 'home-stat-card';
-      card.innerHTML = '<div class="home-stat-num">' + s.num + '</div>'
-        + '<div class="home-stat-label">' + s.label + '</div>';
+      card.innerHTML = '<div class="home-stat-num">'+s.num+'</div>'
+        + '<div class="home-stat-label">'+s.label+'</div>';
       statsRow.appendChild(card);
     });
     container.appendChild(statsRow);
@@ -3396,16 +3453,15 @@
       var monthHeader = document.createElement('div');
       monthHeader.className = 'home-section-header';
       monthHeader.innerHTML = '<span class="home-section-title">今月追加した作品</span>'
-        + '<span class="home-section-sub">' + (today.getMonth()+1) + '月</span>';
+        + '<span class="home-section-sub">'+(today.getMonth()+1)+'月</span>';
       monthSec.appendChild(monthHeader);
-      // 新しい順
       var sortedMonthly = monthlyItems.slice().sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
       sortedMonthly.forEach(function(item) {
         var row = document.createElement('div');
         row.className = 'home-monthly-item';
         var color = genreDefaultColor(item.genre||'その他');
         var d = new Date(item.updatedAt||0);
-        var dateStr = (d.getMonth()+1) + '/' + d.getDate();
+        var dateStr = (d.getMonth()+1)+'/'+d.getDate();
         row.innerHTML = '<span class="home-monthly-dot" style="background:'+color+'"></span>'
           + '<span class="home-monthly-name">'+escapeHTML(item.name)+'</span>'
           + '<span class="home-monthly-genre">'+escapeHTML(item.genre||'')+'</span>'
@@ -3414,63 +3470,6 @@
         monthSec.appendChild(row);
       });
       container.appendChild(monthSec);
-    }
-
-    // ===== 今日のピックアップ（ランダム3ジャンル） =====
-    var genreMap = {};
-    normalItems.forEach(function(item){
-      var g = item.genre||'その他';
-      if (!genreMap[g]) genreMap[g] = [];
-      genreMap[g].push(item);
-    });
-    var genres = Object.keys(genreMap).filter(function(g){ return genreMap[g].length>0; });
-    if (genres.length > 0) {
-      var pickupSec = document.createElement('div');
-      pickupSec.className = 'home-section';
-      var pickupHeader = document.createElement('div');
-      pickupHeader.className = 'home-section-header';
-      pickupHeader.innerHTML = '<span class="home-section-title">今日のピックアップ</span>'
-        + '<span class="home-section-sub">毎日更新</span>';
-      pickupSec.appendChild(pickupHeader);
-
-      var shuffled = genres.slice();
-      for (var i=shuffled.length-1;i>0;i--){
-        var j=Math.floor(seededRand(seed+i)*(i+1));
-        var tmp=shuffled[i];shuffled[i]=shuffled[j];shuffled[j]=tmp;
-      }
-      var selected = shuffled.slice(0, Math.min(3, shuffled.length));
-
-      selected.forEach(function(genre, gi) {
-        var color = genreDefaultColor(genre);
-        var genreLabel = document.createElement('div');
-        genreLabel.className = 'home-section-header';
-        genreLabel.style.marginTop = gi > 0 ? '14px' : '0';
-        genreLabel.innerHTML = '<span class="home-genre-dot" style="background:'+color+'"></span>'
-          + '<span style="font-size:12px;color:var(--ink2);font-weight:500;">'+escapeHTML(genre)+'</span>';
-        pickupSec.appendChild(genreLabel);
-
-        var cards = genreMap[genre].slice();
-        for (var i=cards.length-1;i>0;i--){
-          var j=Math.floor(seededRand(seed+gi*100+i)*(i+1));
-          var tmp=cards[i];cards[i]=cards[j];cards[j]=tmp;
-        }
-        var show = cards.slice(0, 5);
-        var row = document.createElement('div');
-        row.className = 'home-cards-row';
-        show.forEach(function(item) {
-          var card = document.createElement('div');
-          card.className = 'home-card';
-          card.innerHTML = '<div class="home-card-img">'
-            + (item.photo?'<img src="'+item.photo+'" alt="">':'<span>'+genreIcon(item.genre)+'</span>')
-            + '</div>'
-            + '<div class="home-card-name">'+escapeHTML(item.name)+'</div>'
-            + '<div class="home-card-stars">'+starsHTML(item.stars)+'</div>';
-          card.addEventListener('click', (function(id){ return function(){ openModal(id); }; })(item.id));
-          row.appendChild(card);
-        });
-        pickupSec.appendChild(row);
-      });
-      container.appendChild(pickupSec);
     }
 
     if (normalItems.length === 0) {
@@ -4121,7 +4120,7 @@
   applySelectBtn(false);
 
   // 初期レンダリング
-  renderGrid();
+  setPage('home');
 
 })();
 
