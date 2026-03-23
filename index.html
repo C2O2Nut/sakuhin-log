@@ -612,7 +612,7 @@
 <header>
   <h1>作品ログ</h1>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.1.5</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.1.6</span>
     <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
   </div>
 </header>
@@ -633,7 +633,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.5</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.1.6</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -1228,6 +1228,16 @@
   // ===== ユーティリティ =====
   function el(id) { return document.getElementById(id); }
 
+  function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   var _toastTimer = null;
   function showToast(msg, type) {
     var t = el('toast');
@@ -1582,7 +1592,7 @@
         header.className = 'genre-group-header';
         var color = genreDefaultColor(genre);
         header.innerHTML = '<span class="genre-dot" style="background:' + color + '"></span>'
-          + genre
+          + escapeHTML(genre)
           + '<span class="genre-group-count">(' + groups[genre].length + ')</span>';
         grid.appendChild(header);
         groups[genre].forEach(function(item) { appendCard(item, grid); });
@@ -1601,7 +1611,7 @@
         };
         return '<div class="card-dates">' + (i > 0 ? '再: ' : '') + fmt(d.start) + ' 〜 ' + fmt(d.end) + '</div>';
       }).join('');
-      var tagsHTML = (item.tags||[]).map(function(t) { return '<span class="tag">' + t + '</span>'; }).join('');
+      var tagsHTML = (item.tags||[]).map(function(t) { return '<span class="tag">' + escapeHTML(t) + '</span>'; }).join('');
       var typeStr = item.type ? ' / ' + item.type : '';
       var status = item.status || '完了';
 
@@ -1616,15 +1626,15 @@
           ? '<img src="' + item.photo + '" alt="">'
           : '<span style="font-size:52px">' + genreIcon(item.genre) + '</span>'
             + '<div class="card-photo-placeholder">' + item.genre + (item.type ? '<br><span style="font-size:9px;opacity:0.7">' + item.type + '</span>' : '') + '</div>')
-        + '<span class="card-genre-badge" style="background:' + genreDefaultColor(item.genre) + '">' + item.genre + typeStr + '</span>'
+        + '<span class="card-genre-badge" style="background:' + genreDefaultColor(item.genre) + '">' + escapeHTML(item.genre) + escapeHTML(typeStr) + '</span>'
         + '<span class="status-dot ' + status + '" title="' + status + '"></span>'
         + '</div>'
         + '<div class="card-body">'
-        + '<div class="card-title">' + item.name + '</div>'
+        + '<div class="card-title">' + escapeHTML(item.name) + '</div>'
         + '<div class="card-stars">' + starsHTML(item.stars) + '</div>'
         + (tagsHTML ? '<div class="card-tags">' + tagsHTML + '</div>' : '')
         + datesHTML
-        + (item.memo ? '<div class="card-memo">' + item.memo + '</div>' : '')
+        + (item.memo ? '<div class="card-memo">' + escapeHTML(item.memo) + '</div>' : '')
         /* memoPhotoはカードに表示しない */
         + '</div>';
       } // end else
@@ -1655,7 +1665,7 @@
       var fmt = function(v) { if (!v) return '?'; return isMonth ? v.slice(0,7) : v; };
       return '<div class="card-dates">' + (i > 0 ? '再: ' : '') + fmt(d.start) + ' 〜 ' + fmt(d.end) + '</div>';
     }).join('');
-    var tagsHTML = (item.tags||[]).map(function(t) { return '<span class="tag">' + t + '</span>'; }).join('');
+    var tagsHTML = (item.tags||[]).map(function(t) { return '<span class="tag">' + escapeHTML(t) + '</span>'; }).join('');
     var typeStr = item.type ? ' / ' + item.type : '';
     var status = item.status || '完了';
     var card;
@@ -1669,15 +1679,15 @@
           ? '<img src="' + item.photo + '" alt="">'
           : '<span style="font-size:52px">' + genreIcon(item.genre) + '</span>'
             + '<div class="card-photo-placeholder">' + item.genre + (item.type ? '<br><span style="font-size:9px;opacity:0.7">' + item.type + '</span>' : '') + '</div>')
-        + '<span class="card-genre-badge" style="background:' + genreDefaultColor(item.genre) + '">' + item.genre + typeStr + '</span>'
+        + '<span class="card-genre-badge" style="background:' + genreDefaultColor(item.genre) + '">' + escapeHTML(item.genre) + escapeHTML(typeStr) + '</span>'
         + '<span class="status-dot ' + status + '" title="' + status + '"></span>'
         + '</div>'
         + '<div class="card-body">'
-        + '<div class="card-title">' + item.name + '</div>'
+        + '<div class="card-title">' + escapeHTML(item.name) + '</div>'
         + '<div class="card-stars">' + starsHTML(item.stars) + '</div>'
         + (tagsHTML ? '<div class="card-tags">' + tagsHTML + '</div>' : '')
         + datesHTML
-        + (item.memo ? '<div class="card-memo">' + item.memo + '</div>' : '')
+        + (item.memo ? '<div class="card-memo">' + escapeHTML(item.memo) + '</div>' : '')
         + '</div>';
     }
     card.setAttribute('data-id', String(item.id));
@@ -1804,7 +1814,7 @@
             + (item.photo ? '<img src="' + item.photo + '" alt="">' : '<span>' + genreIcon(item.genre) + '</span>')
             + '<div class="tl-card-badge">' + item.genre + typeStr + '</div>'
             + '</div>'
-            + '<div class="tl-card-name">' + item.name + '</div>'
+            + '<div class="tl-card-name">' + escapeHTML(item.name) + '</div>'
             + '<div class="tl-card-stars">' + stars + '</div>';
           card.setAttribute('data-id', String(item.id));
           card.addEventListener('click', (function(id) {
@@ -3211,8 +3221,8 @@
     c.innerHTML='<div class="card-photo" style="background:'+color+'22;display:flex;align-items:center;justify-content:center;min-height:80px;">'
       +'<div style="width:56px;height:56px;border-radius:50%;background:'+color+';opacity:0.85;"></div>'
       +'</div>'
-      +'<div class="card-body"><div class="card-title">'+(item.name||'ムード')+'</div>'+dH
-      +(item.memo?'<div class="card-memo">'+item.memo+'</div>':'')+'</div>';
+      +'<div class="card-body"><div class="card-title">'+escapeHTML(item.name||'ムード')+'</div>'+dH
+      +(item.memo?'<div class="card-memo">'+escapeHTML(item.memo)+'</div>':'')+'</div>';
     return c;
   }
 
@@ -3267,9 +3277,9 @@
       +(cids.length?'<span class="folder-count-badge">'+cids.length+'件</span>':'')
       +'<button class="folder-edit-btn" data-folder-id="'+String(item.id)+'" title="編集">⚙</button>'
       +'</div>'
-      +'<div class="card-body"><div class="card-title">📁 '+item.name+'</div>'
+      +'<div class="card-body"><div class="card-title">📁 '+escapeHTML(item.name)+'</div>'
       +'<div class="card-stars">'+starsHTML(item.stars)+'</div>'
-      +(item.detail?'<div style="font-size:11px;color:var(--ink3);margin-top:2px;">'+item.detail+'</div>':'')
+      +(item.detail?'<div style="font-size:11px;color:var(--ink3);margin-top:2px;">'+escapeHTML(item.detail)+'</div>':'')
       +'</div>';
     return c;
   }
