@@ -763,7 +763,7 @@
 <header>
   <h1>作品ログ</h1>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.2.8</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.2.9</span>
     <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
   </div>
 </header>
@@ -785,7 +785,7 @@
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
   <button class="dmenu-btn" id="genre-manage-btn">ジャンルを管理する</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.2.8</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.2.9</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -890,7 +890,7 @@
     <button class="settings-action-btn" id="settings-steam-btn">Steamからインポート</button>
   </div>
 
-  <div style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);margin-top:24px;" id="settings-version-label">v3.2.8</div>
+  <div style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);margin-top:24px;" id="settings-version-label">v3.2.9</div>
 </div>
 
 <div class="grid" id="grid-view">
@@ -3604,7 +3604,7 @@
   function renderSettingsPage() {
     // バージョン表示
     var vl = el('settings-version-label');
-    if (vl) vl.textContent = 'v3.2.8';
+    if (vl) vl.textContent = 'v3.2.9';
 
     // Drive状態を反映
     el('settings-drive-login-btn').style.display = driveLoggedIn ? 'none' : 'block';
@@ -4040,10 +4040,10 @@
 
   // 設定ページ
   function syncSettingsDriveUI() {
-    el('drive-login-btn2').style.display  = driveLoggedIn ? 'none'  : 'block';
-    el('drive-save-btn2').style.display   = driveLoggedIn ? 'block' : 'none';
-    el('drive-load-btn2').style.display   = driveLoggedIn ? 'block' : 'none';
-    el('drive-logout-btn2').style.display = driveLoggedIn ? 'block' : 'none';
+    el('settings-drive-login-btn').style.display  = driveLoggedIn ? 'none'  : 'block';
+    el('settings-drive-save-btn').style.display   = driveLoggedIn ? 'block' : 'none';
+    el('settings-drive-load-btn').style.display   = driveLoggedIn ? 'block' : 'none';
+    el('settings-drive-logout-btn').style.display = driveLoggedIn ? 'block' : 'none';
   }
   el('drive-login-btn2').addEventListener('click', function(){ el('drive-login-btn').click(); setTimeout(syncSettingsDriveUI,1000); });
   el('drive-save-btn2').addEventListener('click', function(){ el('drive-save-btn').click(); });
