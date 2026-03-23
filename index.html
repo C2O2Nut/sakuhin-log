@@ -437,10 +437,10 @@
   /* パンくず */
   #folder-breadcrumb { display:none; align-items:center; gap:8px; padding:8px 16px; background:var(--surface2); border-bottom:1px solid var(--border); font-size:13px; color:var(--ink2); }
   #folder-breadcrumb.show { display:flex; }
-  #folder-back-btn { padding:4px 12px; border:1.5px solid var(--border); border-radius:20px; background:none; cursor:pointer; font-size:12px; color:var(--ink2); font-family:'Noto Sans JP',sans-serif; }
+  #folder-back-btn { padding:4px 12px; border:1.5px solid var(--border); border-radius:20px; background:none; cursor:pointer; font-size:12px; color:var(--ink2); font-family:sans-serif; }
   /* 下部ナビ: フローティング角丸 */
   #bottom-nav { position:fixed; bottom:12px; left:16px; right:16px; z-index:200; height:56px; background:var(--surface); display:flex; align-items:stretch; border-radius:28px; box-shadow:0 4px 20px var(--shadow); border:1px solid var(--border); overflow:hidden; }
-  .nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:none; border:none; cursor:pointer; font-family:'Noto Sans JP',sans-serif; font-size:10px; color:var(--ink3); transition:color 0.15s; }
+  .nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:none; border:none; cursor:pointer; font-family:sans-serif; font-size:10px; color:var(--ink3); transition:color 0.15s; }
   .nav-btn.active { color:var(--accent); }
   .nav-btn .nav-icon { font-size:20px; line-height:1; }
   body { padding-bottom:80px; }
@@ -453,7 +453,7 @@
   .add-type-sheet { background:var(--surface); border-radius:16px 16px 0 0; width:100%; max-width:500px; padding:20px 20px 40px; }
   .add-type-sheet h3 { font-family:'Noto Serif JP',serif; font-size:15px; margin-bottom:16px; color:var(--ink2); text-align:center; }
   .add-type-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
-  .add-type-btn { display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 8px; background:var(--surface2); border:1.5px solid var(--border); border-radius:12px; cursor:pointer; font-family:'Noto Sans JP',sans-serif; transition:all 0.15s; }
+  .add-type-btn { display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 8px; background:var(--surface2); border:1.5px solid var(--border); border-radius:12px; cursor:pointer; font-family:sans-serif; transition:all 0.15s; }
   .add-type-btn:hover { border-color:var(--accent); }
   .add-type-btn .type-icon { font-size:24px; }
   .add-type-btn .type-name { font-size:12px; font-weight:500; color:var(--ink); }
@@ -483,7 +483,7 @@
   #bulk-folder-modal.open { display:flex; }
   .bulk-folder-sheet { background:var(--surface); border-radius:16px 16px 0 0; width:100%; max-width:500px; padding:20px 20px 40px; }
   .bulk-folder-sheet h3 { font-family:'Noto Serif JP',serif; font-size:15px; margin-bottom:16px; color:var(--ink2); text-align:center; }
-  .folder-choice-btn { display:block; width:100%; padding:12px 16px; background:none; border:1.5px solid var(--border); border-radius:8px; margin-bottom:8px; font-family:'Noto Sans JP',sans-serif; font-size:14px; color:var(--ink); cursor:pointer; text-align:left; transition:all 0.15s; }
+  .folder-choice-btn { display:block; width:100%; padding:12px 16px; background:none; border:1.5px solid var(--border); border-radius:8px; margin-bottom:8px; font-family:sans-serif; font-size:14px; color:var(--ink); cursor:pointer; text-align:left; transition:all 0.15s; }
   .folder-choice-btn:hover { border-color:var(--accent); background:var(--surface2); }
 
   .folder-edit-btn {
@@ -743,7 +743,7 @@
   /* 設定ページ */
   .settings-section { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:14px; }
   .settings-section-title { font-size:11px; font-weight:500; color:var(--ink3); letter-spacing:0.06em; margin-bottom:12px; }
-  .settings-action-btn { display:block; width:100%; padding:11px 14px; background:none; border:none; border-radius:8px; font-family:'Noto Sans JP',sans-serif; font-size:14px; color:var(--ink); cursor:pointer; text-align:left; transition:background 0.12s; margin-bottom:2px; }
+  .settings-action-btn { display:block; width:100%; padding:11px 14px; background:none; border:none; border-radius:8px; font-family:sans-serif; font-size:14px; color:var(--ink); cursor:pointer; text-align:left; transition:background 0.12s; margin-bottom:2px; }
   .settings-action-btn:hover { background:var(--surface2); }
   .settings-action-btn.danger { color:#c94a2a; }
   .genre-manage-row { display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid var(--border); }
@@ -764,7 +764,7 @@
 <header>
   <h1>作品ログ</h1>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.2.4</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.2.5</span>
     <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
   </div>
 </header>
@@ -785,7 +785,7 @@
   <button class="dmenu-btn" id="import-btn">JSONからインポート</button>
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.2.4</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.2.5</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -808,7 +808,7 @@
   </div>
   <!-- 右側固定ボタン群 -->
   <div class="toolbar-right">
-    <select id="sort-select" style="padding:5px 8px;border:1.5px solid var(--border);border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:12px;background:var(--bg);color:var(--ink2);cursor:pointer;height:34px;">
+    <select id="sort-select" style="padding:5px 8px;border:1.5px solid var(--border);border-radius:4px;font-family:sans-serif;font-size:12px;background:var(--bg);color:var(--ink2);cursor:pointer;height:34px;">
       <option value="default">登録順</option>
       <option value="name">名前順</option>
       <option value="lastdate">最終日順</option>
@@ -890,7 +890,7 @@
     <button class="settings-action-btn" id="settings-steam-btn">Steamからインポート</button>
   </div>
 
-  <div style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);margin-top:24px;" id="settings-version-label">v3.2.4</div>
+  <div style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);margin-top:24px;" id="settings-version-label">v3.2.5</div>
 </div>
 
 <div class="grid" id="grid-view">
@@ -904,7 +904,7 @@
   <div style="display:flex;align-items:center;gap:10px;padding:12px 24px 0;flex-wrap:wrap;">
     <button class="view-btn active" id="tl-mode-normal-btn">通常</button>
     <button class="view-btn" id="tl-mode-important-btn">重要</button>
-    <button type="button" id="tl-important-edit-btn" style="display:none;padding:5px 12px;border:1.5px solid var(--accent);border-radius:4px;background:none;color:var(--accent);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;">重要を設定…</button>
+    <button type="button" id="tl-important-edit-btn" style="display:none;padding:5px 12px;border:1.5px solid var(--accent);border-radius:4px;background:none;color:var(--accent);font-size:12px;font-family:sans-serif;cursor:pointer;">重要を設定…</button>
     <div style="width:1px;height:20px;background:var(--border);margin:0 2px;"></div>
     <button class="layout-btn active" id="tl-layout-normal-btn" title="通常レイアウト">|||</button>
     <button class="layout-btn" id="tl-layout-zigzag-btn" title="左右交互レイアウト">⇌</button>
@@ -1109,11 +1109,11 @@
         </div>
         <button type="button" class="memo-clear" id="memo-clear-btn">メモ画像を削除</button>
       </div>
-      <div class="form-row"><label>フォルダーに追加</label><select id="f-folder-select" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:14px;background:var(--bg);color:var(--ink);outline:none;"><option value="">（なし）</option></select></div>
+      <div class="form-row"><label>フォルダーに追加</label><select id="f-folder-select" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:4px;font-family:sans-serif;font-size:14px;background:var(--bg);color:var(--ink);outline:none;"><option value="">（なし）</option></select></div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn-delete" id="btn-delete" style="display:none">削除</button>
-      <button type="button" id="btn-important" style="display:none;padding:8px 14px;background:transparent;border:1.5px solid var(--border);border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:13px;cursor:pointer;color:var(--ink2);">重要</button>
+      <button type="button" id="btn-important" style="display:none;padding:8px 14px;background:transparent;border:1.5px solid var(--border);border-radius:4px;font-family:sans-serif;font-size:13px;cursor:pointer;color:var(--ink2);">重要</button>
       <button type="button" class="btn-cancel" id="btn-cancel">キャンセル</button>
       <button type="button" class="btn-save" id="btn-save">保存</button>
     </div>
@@ -1178,7 +1178,7 @@
       <div style="border-top:1px solid var(--border);padding-top:14px;">
         <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;">新しいジャンルを追加</div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <input type="text" id="genre-new-name" placeholder="ジャンル名" style="flex:1;padding:8px 11px;border:1.5px solid var(--border);border-radius:4px;font-family:'Noto Sans JP',sans-serif;font-size:14px;background:var(--bg);color:var(--ink);outline:none;">
+          <input type="text" id="genre-new-name" placeholder="ジャンル名" style="flex:1;padding:8px 11px;border:1.5px solid var(--border);border-radius:4px;font-family:sans-serif;font-size:14px;background:var(--bg);color:var(--ink);outline:none;">
           <input type="color" id="genre-new-color" value="#888888" style="height:36px;width:44px;padding:2px;border:1.5px solid var(--border);border-radius:4px;cursor:pointer;">
           <button type="button" id="genre-new-add-btn" class="btn-save" style="white-space:nowrap;">追加</button>
         </div>
@@ -3586,7 +3586,7 @@
   function renderSettingsPage() {
     // バージョン表示
     var vl = el('settings-version-label');
-    if (vl) vl.textContent = 'v3.2.4';
+    if (vl) vl.textContent = 'v3.2.5';
 
     // Drive状態を反映
     el('settings-drive-login-btn').style.display = driveLoggedIn ? 'none' : 'block';
@@ -4067,13 +4067,12 @@
         + '<span style="flex:1;font-size:14px;">'+escapeHTML(name)+'</span>'
         + (isDefault
           ? '<span style="font-size:11px;color:var(--ink3);">デフォルト</span>'
-          : '<button type="button" data-del="'+escapeHTML(name)+'" style="padding:4px 12px;border-radius:6px;border:1.5px solid #c94a2a;background:none;color:#c94a2a;font-size:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">削除</button>');
+          : '<button type="button" data-del="'+escapeHTML(name)+'" style="padding:4px 12px;border-radius:6px;border:1.5px solid #c94a2a;background:none;color:#c94a2a;font-size:12px;cursor:pointer;font-family:sans-serif;">削除</button>');
       var delBtn = row.querySelector('button[data-del]');
       if (delBtn) {
         delBtn.addEventListener('click', function() {
           var n = this.getAttribute('data-del');
-          if (!confirm('「'+n+'」を削除しますか？
-このジャンルのカードは「その他」になります。')) return;
+          if (!confirm('「'+n+'」を削除しますか？このジャンルのカードは「その他」になります。')) return;
           items.forEach(function(item){ if(item.genre===n) item.genre='その他'; });
           customGenres = customGenres.filter(function(cg){ return cg.name!==n; });
           saveGenres(); saveData(); rebuildGenreUI();
