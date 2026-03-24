@@ -763,7 +763,7 @@
 <header>
   <h1>作品ログ</h1>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.3.1</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.3.3</span>
     <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
   </div>
 </header>
@@ -785,7 +785,7 @@
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
   <button class="dmenu-btn" id="genre-manage-btn">ジャンルを管理する</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.3.1</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.3.3</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -859,39 +859,7 @@
 
 <div id="home-view"><div id="home-daily"></div></div>
 
-<div id="settings-view" style="display:none; padding:20px 16px 80px; max-width:600px; margin:0 auto;">
-  <div style="font-family:'Noto Serif JP',serif; font-size:18px; color:var(--ink); margin-bottom:20px;">設定</div>
 
-  <div class="settings-section">
-    <div class="settings-section-title">ジャンル管理</div>
-    <div id="genre-manage-list" style="margin-bottom:12px;"></div>
-    <button class="settings-action-btn" id="settings-add-genre-btn">＋ ジャンルを追加</button>
-  </div>
-
-  <div class="settings-section">
-    <div class="settings-section-title">テーマ・カラー</div>
-    <button class="settings-action-btn" id="settings-theme-btn">テーマを変更する</button>
-  </div>
-
-  <div class="settings-section">
-    <div class="settings-section-title">Google Drive 同期</div>
-    <button class="settings-action-btn" id="settings-drive-login-btn">Googleアカウントでログイン</button>
-    <button class="settings-action-btn" id="settings-drive-save-btn" style="display:none;">Driveに今すぐ保存</button>
-    <button class="settings-action-btn" id="settings-drive-load-btn" style="display:none;">Driveから読み込む</button>
-    <button class="settings-action-btn danger" id="settings-drive-logout-btn" style="display:none;">ログアウト</button>
-    <div id="settings-drive-status" style="font-size:12px;color:var(--ink3);padding:6px 0;"></div>
-  </div>
-
-  <div class="settings-section">
-    <div class="settings-section-title">インポート / エクスポート</div>
-    <button class="settings-action-btn" id="settings-export-btn">JSONでエクスポート</button>
-    <button class="settings-action-btn" id="settings-import-btn">JSONからインポート</button>
-    <button class="settings-action-btn" id="settings-bookmory-btn">bookmoryからインポート</button>
-    <button class="settings-action-btn" id="settings-steam-btn">Steamからインポート</button>
-  </div>
-
-  <div style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);margin-top:24px;" id="settings-version-label">v3.3.1</div>
-</div>
 
 <div class="grid" id="grid-view">
   <div class="empty">
@@ -1135,60 +1103,39 @@
 <div id="settings-view" style="display:none;padding:20px 16px 80px;max-width:600px;margin:0 auto;">
   <div style="font-family:'Noto Serif JP',serif;font-size:18px;color:var(--ink);margin-bottom:20px;">設定</div>
 
-  <div style="margin-bottom:8px;font-size:11px;color:var(--ink3);letter-spacing:0.08em;font-weight:500;">データ管理</div>
+  <div style="margin-bottom:8px;font-size:11px;color:var(--ink3);letter-spacing:0.08em;font-weight:500;">Google Drive 同期</div>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;">
-    <div style="padding:10px 14px 6px;font-size:11px;color:var(--ink3);border-bottom:1px solid var(--border);">Google Drive 自動同期</div>
-    <button class="dmenu-btn" id="drive-login-btn2">Googleアカウントでログイン</button>
-    <button class="dmenu-btn" id="drive-save-btn2" style="display:none">Driveに今すぐ保存</button>
-    <button class="dmenu-btn" id="drive-load-btn2" style="display:none">Driveから読み込む</button>
-    <button class="dmenu-btn" id="drive-logout-btn2" style="display:none;color:#c94a2a;">ログアウト</button>
-    <div id="drive-status2" style="padding:6px 14px 8px;font-size:11px;color:var(--ink3);display:none;"></div>
+    <button class="dmenu-btn" id="settings-drive-login-btn">Googleアカウントでログイン</button>
+    <button class="dmenu-btn" id="settings-drive-save-btn" style="display:none;">Driveに今すぐ保存</button>
+    <button class="dmenu-btn" id="settings-drive-load-btn" style="display:none;">Driveから読み込む</button>
+    <button class="dmenu-btn" id="settings-drive-logout-btn" style="display:none;color:#c94a2a;">ログアウト</button>
+    <div id="settings-drive-status" style="padding:6px 14px 8px;font-size:11px;color:var(--ink3);"></div>
   </div>
 
+  <div style="margin-bottom:8px;font-size:11px;color:var(--ink3);letter-spacing:0.08em;font-weight:500;">インポート / エクスポート</div>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;">
-    <div style="padding:10px 14px 6px;font-size:11px;color:var(--ink3);border-bottom:1px solid var(--border);">インポート</div>
+    <button class="dmenu-btn" id="settings-export-btn">JSONでエクスポート</button>
+    <button class="dmenu-btn" id="settings-import-btn">JSONからインポート</button>
     <button class="dmenu-btn" id="settings-bookmory-btn">bookmoryからインポート (.bookmory)</button>
     <button class="dmenu-btn" id="settings-steam-btn">Steamからインポート</button>
   </div>
 
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;">
-    <div style="padding:10px 14px 6px;font-size:11px;color:var(--ink3);border-bottom:1px solid var(--border);">バックアップ</div>
-    <button class="dmenu-btn" id="settings-export-btn">JSONでエクスポート</button>
-    <button class="dmenu-btn" id="settings-import-btn">JSONからインポート</button>
+  <div style="margin-bottom:8px;font-size:11px;color:var(--ink3);letter-spacing:0.08em;font-weight:500;">ジャンル管理</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;padding:12px 14px;">
+    <div id="settings-genre-list" style="margin-bottom:12px;"></div>
+    <button class="dmenu-btn" id="settings-add-genre-btn" style="border-top:1px solid var(--border);">＋ ジャンルを追加</button>
   </div>
 
-  <div style="margin-bottom:8px;font-size:11px;color:var(--ink3);letter-spacing:0.08em;font-weight:500;">カスタマイズ</div>
+  <div style="margin-bottom:8px;font-size:11px;color:var(--ink3);letter-spacing:0.08em;font-weight:500;">テーマ</div>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;">
     <button class="dmenu-btn" id="settings-theme-btn">テーマ・色を変える</button>
-    <button class="dmenu-btn" id="settings-genres-btn" style="border-top:1px solid var(--border);">ジャンルの管理</button>
   </div>
 
   <div style="text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);margin-top:8px;" id="settings-version-label"></div>
 </div>
 
 <!-- ジャンル管理モーダル -->
-<div class="modal-overlay" id="genre-manage-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2>ジャンルの管理</h2>
-      <button class="modal-close" id="genre-manage-close">×</button>
-    </div>
-    <div class="modal-body">
-      <div id="genre-manage-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"></div>
-      <div style="border-top:1px solid var(--border);padding-top:14px;">
-        <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;">新しいジャンルを追加</div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="text" id="genre-new-name" placeholder="ジャンル名" style="flex:1;padding:8px 11px;border:1.5px solid var(--border);border-radius:4px;font-family:sans-serif;font-size:14px;background:var(--bg);color:var(--ink);outline:none;">
-          <input type="color" id="genre-new-color" value="#888888" style="height:36px;width:44px;padding:2px;border:1.5px solid var(--border);border-radius:4px;cursor:pointer;">
-          <button type="button" id="genre-new-add-btn" class="btn-save" style="white-space:nowrap;">追加</button>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn-cancel" id="genre-manage-cancel">閉じる</button>
-    </div>
-  </div>
-</div>
+
 
 
 <div class="modal-overlay" id="genre-manage-modal">
@@ -3364,8 +3311,16 @@
       if (!driveFileId) { driveSetStatus('Driveにデータが見つかりません'); return; }
       driveLoadRaw(function(loaded) {
         if (!loaded) { driveSetStatus('読み込み失敗'); return; }
-        if (!confirm('Driveのデータ（' + loaded.length + ' 件）をマージしますか？\n重複は上書きせず、新規のみ追加されます。')) { driveSetStatus(''); return; }
-        smartMerge(items, loaded, function(added, skipped, memoMerged) {
+        // genres復元（Drive新形式対応）
+        if (loaded.genres && loaded.genres.length > 0) {
+          customGenres = loaded.genres;
+          saveGenres();
+          rebuildGenreUI();
+          if (currentPage === 'settings') renderSettingsGenre();
+        }
+        var loadedItems = loaded.items || loaded;
+        if (!confirm('Driveのデータ（' + loadedItems.length + ' 件）をマージしますか？\n重複は上書きせず、新規のみ追加されます。')) { driveSetStatus(''); return; }
+        smartMerge(items, loadedItems, function(added, skipped, memoMerged) {
           _origSaveData();
           if (currentView === 'grid') renderGrid(); else renderTimeline();
           driveSetStatus('マージ完了: 追加 ' + added + ' 件・スキップ ' + skipped + ' 件');
@@ -3606,7 +3561,7 @@
   function renderSettingsPage() {
     // バージョン表示
     var vl = el('settings-version-label');
-    if (vl) vl.textContent = 'v3.3.1';
+    if (vl) vl.textContent = 'v3.3.3';
 
     // Drive状態を反映
     el('settings-drive-login-btn').style.display = driveLoggedIn ? 'none' : 'block';
@@ -4048,19 +4003,19 @@
     el('settings-drive-load-btn').style.display   = driveLoggedIn ? 'block' : 'none';
     el('settings-drive-logout-btn').style.display = driveLoggedIn ? 'block' : 'none';
   }
-  el('drive-login-btn2').addEventListener('click', function(){ el('drive-login-btn').click(); setTimeout(syncSettingsDriveUI,1000); });
-  el('drive-save-btn2').addEventListener('click', function(){ el('drive-save-btn').click(); });
-  el('drive-load-btn2').addEventListener('click', function(){ el('drive-load-btn').click(); });
-  el('drive-logout-btn2').addEventListener('click', function(){ el('drive-logout-btn').click(); syncSettingsDriveUI(); });
+  el('settings-drive-login-btn').addEventListener('click', function(){ el('drive-login-btn').click(); });
+  el('settings-drive-save-btn').addEventListener('click', function(){ el('drive-save-btn').click(); });
+  el('settings-drive-load-btn').addEventListener('click', function(){ el('drive-load-btn').click(); });
+  el('settings-drive-logout-btn').addEventListener('click', function(){ el('drive-logout-btn').click(); });
   el('settings-bookmory-btn').addEventListener('click', function(){ el('bookmory-import-btn').click(); });
   el('settings-steam-btn').addEventListener('click', function(){ el('steam-import-btn').click(); });
   el('settings-export-btn').addEventListener('click', function(){ el('export-btn').click(); });
   el('settings-import-btn').addEventListener('click', function(){ el('import-btn').click(); });
   el('settings-theme-btn').addEventListener('click', function(){ el('theme-btn').click(); });
-  el('settings-genres-btn').addEventListener('click', openGenreManage);
+  // settings-genres-btn → settings-add-genre-btnに統合
   el('genre-manage-close').addEventListener('click', function(){ el('genre-manage-modal').classList.remove('open'); });
   el('genre-manage-cancel').addEventListener('click', function(){ el('genre-manage-modal').classList.remove('open'); });
-  el('genre-new-add-btn').addEventListener('click', function() {
+  el('settings-add-genre-btn').addEventListener('click', function() {
     var name = el('genre-new-name').value.trim();
     var color = el('genre-new-color').value;
     if (!name) { showToast('ジャンル名を入力してください','error'); return; }
