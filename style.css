@@ -280,12 +280,6 @@
   body.show-card-titles .tl-card-name { display: -webkit-box; }
   .tl-card-stars { display: none; padding: 0 6px 5px; font-size: 10px; color: var(--accent); }
 
-  /* 期間線 */
-  .tl-period-line {
-    width: 4px; border-radius: 2px; flex-shrink: 0;
-    margin-left: 4px; min-height: 20px;
-  }
-
   /* 左右交互レイアウト */
   .tl-zigzag { padding: 0; }
   .tl-zigzag .tl-year-label { padding-left: 0; text-align: center; }
@@ -311,11 +305,6 @@
     width: 10px; height: 10px; border-radius: 50%;
     background: var(--accent); border: 2px solid var(--bg);
     flex-shrink: 0; margin: 4px 0;
-  }
-  .tl-period-dot-line {
-    width: 4px; flex-shrink: 0; margin-left: 4px;
-    background-image: repeating-linear-gradient(to bottom, currentColor 0, currentColor 4px, transparent 4px, transparent 8px);
-    min-height: 20px;
   }
   .dl-btn {
     padding: 7px 16px; background: var(--ink2); color: var(--bg); border: none;
@@ -893,21 +882,27 @@
   .genre-manage-del:hover { color:var(--danger); }
 
   /* ===== カードデザイン: フロート（縦長ポスター比率 + 左上に浮いて見える影） =====
-     body.card-style-float が付いている間だけ有効。コンパクト表示は対象外。 */
-  body.card-style-float .grid:not(.compact) { gap: 26px 18px; }
-  body.card-style-float .grid:not(.compact) .card {
+     body.card-style-float が付いている間だけ有効。通常・コンパクトどちらの表示にも適用される。 */
+  body.card-style-float .grid { gap: 26px 18px; }
+  body.card-style-float .grid.compact { gap: 20px 14px; }
+  body.card-style-float .grid .card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
     padding: 6px 16px 16px 6px;
   }
-  body.card-style-float .grid:not(.compact) .card:hover {
+  body.card-style-float .grid.compact .card { border-radius: 10px; padding: 4px 10px 10px 4px; }
+  body.card-style-float .grid .card:hover {
     transform: none; border-color: var(--border); box-shadow: 0 2px 10px var(--shadow);
   }
-  body.card-style-float .grid:not(.compact) .card-photo {
+  body.card-style-float .grid .card-photo {
     height: auto; aspect-ratio: 2 / 3; border-radius: 10px;
     box-shadow: 0 14px 28px -8px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.15);
     transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
   }
-  body.card-style-float .grid:not(.compact) .card:hover .card-photo {
+  body.card-style-float .grid.compact .card-photo {
+    border-radius: 8px;
+    box-shadow: 0 8px 16px -6px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,0,0,0.15);
+  }
+  body.card-style-float .grid .card:hover .card-photo {
     transform: translate(-3px, -3px);
     box-shadow: 0 18px 34px -6px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.2);
   }

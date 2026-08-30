@@ -750,8 +750,6 @@
       months.forEach(function(month, monthIdx) {
         // カードラッパー生成ロジック（通常・zigzag共通）
         function makeCardWrap(item) {
-          var itemColor = item.color || genreDefaultColor(item.genre);
-          var dates = getItemDates(item);
           var cardWrap = document.createElement('div');
           cardWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex-shrink:0;';
           var card = document.createElement('div');
@@ -770,28 +768,6 @@
             return function() { openModal(id); };
           })(item.id));
           cardWrap.appendChild(card);
-          // 期間線
-          dates.forEach(function(d) {
-            if (!d.start && !d.end) return;
-            if (d.mode === 'month') return;
-            var hasBoth = d.start && d.end;
-            var hasOnlyEnd = !d.start && d.end;
-            if (hasBoth) {
-              var pl = document.createElement('div');
-              pl.className = 'tl-period-line';
-              pl.style.cssText = 'background:' + itemColor + ';height:28px;';
-              cardWrap.appendChild(pl);
-            } else if (hasOnlyEnd) {
-              var ps = document.createElement('div');
-              ps.className = 'tl-period-line';
-              ps.style.cssText = 'background:' + itemColor + ';height:14px;';
-              cardWrap.appendChild(ps);
-              var pd = document.createElement('div');
-              pd.className = 'tl-period-dot-line';
-              pd.style.cssText = 'color:' + itemColor + ';height:20px;';
-              cardWrap.appendChild(pd);
-            }
-          });
           return cardWrap;
         }
 
@@ -2319,7 +2295,7 @@
   function renderSettingsPage() {
     // バージョン表示
     var vl = el('settings-version-label');
-    if (vl) vl.textContent = 'v3.5.0';
+    if (vl) vl.textContent = 'v3.5.1';
 
     // Drive状態を反映
     el('settings-drive-login-btn').style.display = driveLoggedIn ? 'none' : 'block';
