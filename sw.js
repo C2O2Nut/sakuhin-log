@@ -1,5 +1,5 @@
 // Network First戦略: 常に最新を優先、オフライン時はキャッシュで代替
-const CACHE_NAME = 'sakuhin-log-v6';
+const CACHE_NAME = 'sakuhin-log-v7';
 const CACHE_URLS = ['/sakuhin-log/index.html', '/sakuhin-log/', '/sakuhin-log/style.css', '/sakuhin-log/app.js'];
 
 // インストール: キャッシュに保存して即座にアクティブ化

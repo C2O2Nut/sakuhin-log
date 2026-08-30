@@ -2319,7 +2319,7 @@
   function renderSettingsPage() {
     // バージョン表示
     var vl = el('settings-version-label');
-    if (vl) vl.textContent = 'v3.4.1';
+    if (vl) vl.textContent = 'v3.5.0';
 
     // Drive状態を反映
     el('settings-drive-login-btn').style.display = driveLoggedIn ? 'none' : 'block';
@@ -2461,8 +2461,10 @@
     renderGrid();
   }
 
+  var PAGE_TITLES = { list:'一覧', home:'ホーム', timeline:'年表', settings:'設定' };
   function setPage(page) {
     currentPage=page;
+    var pt = el('page-title'); if (pt) pt.textContent = PAGE_TITLES[page] || '';
     ['nav-list-btn','nav-home-btn','nav-tl-btn','nav-settings-btn'].forEach(function(id){
       var b=el(id); if(b) b.classList.remove('active');
     });
@@ -3268,6 +3270,27 @@
       apply();
     });
   }
+})();
+
+// ==================== カードデザイン切替（独立スクリプト） ====================
+(function () {
+  var KEY = 'sakuhin-card-style';
+  var body = document.body;
+  var btnDefault = document.getElementById('card-style-default-btn');
+  var btnFloat = document.getElementById('card-style-float-btn');
+  var style = localStorage.getItem(KEY) || 'default';
+  function apply() {
+    body.classList.toggle('card-style-float', style === 'float');
+    if (btnDefault) btnDefault.classList.toggle('active', style === 'default');
+    if (btnFloat) btnFloat.classList.toggle('active', style === 'float');
+  }
+  apply();
+  if (btnDefault) btnDefault.addEventListener('click', function () {
+    style = 'default'; localStorage.setItem(KEY, style); apply();
+  });
+  if (btnFloat) btnFloat.addEventListener('click', function () {
+    style = 'float'; localStorage.setItem(KEY, style); apply();
+  });
 })();
 
 // ==================== サイドバー折りたたみ（独立スクリプト） ====================

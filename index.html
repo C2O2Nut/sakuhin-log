@@ -22,9 +22,9 @@
 <div id="toast"></div>
 
 <header>
-  <h1>作品ログ</h1>
+  <h1 id="page-title">ホーム</h1>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.4.1</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);opacity:0.5;" id="version-label">v3.5.0</span>
     <span id="header-count" style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:12px;">0 件</span>
   </div>
 </header>
@@ -46,7 +46,7 @@
   <div style="padding:6px 14px 4px;font-size:11px;color:var(--ink3);letter-spacing:0.05em;font-weight:500;border-top:1px solid var(--border);margin-top:2px;">カスタマイズ</div>
   <button class="dmenu-btn" id="theme-btn">テーマ・色を変える</button>
   <button class="dmenu-btn" id="genre-manage-btn">ジャンルを管理する</button>
-  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.4.1</div>
+  <div style="padding:8px 14px;font-size:11px;color:var(--ink3);border-top:1px solid var(--border);margin-top:2px;font-family:'DM Mono',monospace;">v3.5.0</div>
   <input type="file" id="import-file" accept=".json" style="display:none;">
   <input type="file" id="bookmory-file" accept=".bookmory" style="display:none;">
 </div>
@@ -381,6 +381,28 @@
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;padding:12px 14px;">
     <div id="settings-genre-list" style="margin-bottom:12px;"></div>
     <button class="dmenu-btn" id="settings-add-genre-btn" style="border-top:1px solid var(--border);">＋ ジャンルを追加</button>
+  </div>
+
+  <div style="margin-bottom:8px;font-size:11px;color:var(--ink3);letter-spacing:0.08em;font-weight:500;">カードデザイン</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:20px;padding:14px;">
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button type="button" class="filter-btn active" id="card-style-default-btn">通常</button>
+      <button type="button" class="filter-btn" id="card-style-float-btn">フロート</button>
+    </div>
+    <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;letter-spacing:0.05em;">プレビュー</div>
+    <div style="width:140px;">
+      <div class="card" style="pointer-events:none;">
+        <div class="card-photo">
+          <span style="font-size:52px">G</span>
+          <div class="card-photo-placeholder">ゲーム</div>
+          <span class="card-genre-badge" style="background:#2a6e8c;">ゲーム</span>
+          <span class="status-dot 完了" title="完了"></span>
+        </div>
+        <div class="card-body has-content">
+          <div class="card-title" style="display:block;">サンプル作品のタイトル</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div style="margin-bottom:8px;font-size:11px;color:var(--ink3);letter-spacing:0.08em;font-weight:500;">テーマ</div>

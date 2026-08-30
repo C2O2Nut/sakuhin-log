@@ -489,17 +489,23 @@
     -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
     display:flex; align-items:stretch; border-radius:18px 18px 0 0;
     box-shadow: 0 -8px 28px -6px rgba(0,0,0,0.5);
-    border:1px solid var(--border); border-bottom:none; overflow:hidden;
+    border:1px solid var(--border); border-bottom:none; overflow:visible;
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
   .nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; cursor:pointer; font-family:'Noto Sans JP',sans-serif; font-size:10px; font-weight:500; color:var(--ink3); transition:color 0.2s var(--ease); }
   .nav-btn.active { color:var(--accent); }
+  /* スマホ表示ではラベル文字を消し、アイコンだけにする（PC用は下のメディアクエリで再表示） */
+  .nav-btn span:last-child { display: none; }
   .nav-btn .nav-icon {
-    width:40px; height:26px; display:flex; align-items:center; justify-content:center;
-    border-radius:14px; transition: background 0.2s var(--ease), transform 0.2s var(--ease);
+    width:52px; height:52px; display:flex; align-items:center; justify-content:center;
+    border-radius:50%; transition: background 0.25s var(--ease), transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
   }
-  .nav-btn .nav-icon svg { width:21px; height:21px; }
-  .nav-btn.active .nav-icon { background: rgba(201,161,90,0.15); transform: translateY(-1px); }
+  .nav-btn .nav-icon svg { width:26px; height:26px; }
+  .nav-btn.active .nav-icon {
+    background: var(--accent); color: var(--bg);
+    transform: translateY(-16px);
+    box-shadow: 0 10px 24px -6px rgba(0,0,0,0.55), 0 0 0 5px var(--bg);
+  }
   #sidebar-collapse-btn {
     display: none; /* PCスタイル（幅900px以上）でのみ表示 */
     background: none; border: none; cursor: pointer; width: 100%;
@@ -539,8 +545,8 @@
     .nav-btn.active { background: var(--surface2); }
     .nav-btn .nav-icon { width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0; }
     .nav-btn .nav-icon svg { width: 18px; height: 18px; }
-    .nav-btn.active .nav-icon { transform: none; }
-    .nav-btn span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nav-btn.active .nav-icon { transform: none; background: none; color: inherit; box-shadow: none; }
+    .nav-btn span:last-child { display: inline; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     /* ヘッダー・ツールバー・各ビューは自動的に右側（body の padding-left 分）に寄る */
     header { padding-left: 26px; }
 
@@ -885,3 +891,26 @@
   .genre-manage-count { font-size:12px; color:var(--ink3); }
   .genre-manage-del { background:none; border:none; color:var(--ink3); cursor:pointer; font-size:16px; padding:0 4px; transition:color 0.15s var(--ease); }
   .genre-manage-del:hover { color:var(--danger); }
+
+  /* ===== カードデザイン: フロート（縦長ポスター比率 + 左上に浮いて見える影） =====
+     body.card-style-float が付いている間だけ有効。コンパクト表示は対象外。 */
+  body.card-style-float .grid:not(.compact) { gap: 26px 18px; }
+  body.card-style-float .grid:not(.compact) .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 6px 16px 16px 6px;
+  }
+  body.card-style-float .grid:not(.compact) .card:hover {
+    transform: none; border-color: var(--border); box-shadow: 0 2px 10px var(--shadow);
+  }
+  body.card-style-float .grid:not(.compact) .card-photo {
+    height: auto; aspect-ratio: 2 / 3; border-radius: 10px;
+    box-shadow: 0 14px 28px -8px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.15);
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  }
+  body.card-style-float .grid:not(.compact) .card:hover .card-photo {
+    transform: translate(-3px, -3px);
+    box-shadow: 0 18px 34px -6px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.2);
+  }
+
+  /* カードデザイン設定のプレビュー用ボタン */
+  #card-style-default-btn, #card-style-float-btn { min-width: 72px; text-align: center; }
