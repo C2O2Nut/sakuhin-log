@@ -560,6 +560,24 @@
     body.sidebar-collapsed #sidebar-collapse-btn span:last-child { display: none; }
     body.sidebar-collapsed #sidebar-collapse-btn .nav-icon svg { transform: rotate(180deg); }
   }
+
+  /* ========================================================
+     タブレット幅（iPadなど、900px未満だがスマホより広い画面）：
+     スマホ用の下部バーをそのまま横幅いっぱいに引き伸ばすと
+     ボタンの間隔が間延びして見えるため、中央寄せの固定幅ボタン列にし、
+     バー・アイコン・アクティブ時の丸も一回り大きくする。
+     ======================================================== */
+  @media (min-width: 600px) and (max-width: 899px) {
+    #bottom-nav { height: 76px; justify-content: center; gap: 14px; }
+    .nav-btn { flex: 0 0 auto; width: 108px; }
+    .nav-btn .nav-icon { width: 62px; height: 62px; }
+    .nav-btn .nav-icon svg { width: 30px; height: 30px; }
+    .nav-btn.active .nav-icon {
+      transform: translateY(-22px);
+      box-shadow: 0 12px 28px -6px rgba(0,0,0,0.55), 0 0 0 6px var(--bg);
+    }
+    body { padding-bottom: 104px; }
+  }
   /* ホーム画面 */
   #home-view { display:none; padding:40px 24px; text-align:center; color:var(--ink3); }
   #home-view h2 { font-family:'Noto Serif JP',serif; font-size:20px; color:var(--ink2); margin-bottom:12px; }
@@ -907,5 +925,34 @@
     box-shadow: 0 18px 34px -6px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.2);
   }
 
+  /* ===== カードデザイン: フロート2（画像の向きに合わせて縦長/横長を自動判定） =====
+     body.card-style-float2 が付いている間だけ有効。
+     .card への is-landscape / is-portrait は app.js が画像の実寸から自動で付与する。
+     縦長画像: 画像は左、タイトルは右の空きスペースに。横長画像: 画像は上いっぱい、タイトルは下に。 */
+  body.card-style-float2 .grid .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    overflow: hidden;
+  }
+  body.card-style-float2 .grid .card:hover {
+    transform: translateY(-2px); box-shadow: 0 10px 24px -10px rgba(0,0,0,0.5);
+  }
+  body.card-style-float2 .grid .card.is-portrait {
+    display: flex; flex-direction: row; align-items: stretch; padding: 8px; gap: 10px;
+  }
+  body.card-style-float2 .grid .card.is-portrait .card-photo {
+    flex: 0 0 40%; width: auto; height: auto; aspect-ratio: 2 / 3; border-radius: 10px;
+  }
+  body.card-style-float2 .grid .card.is-portrait .card-body {
+    flex: 1; display: flex; flex-direction: column; justify-content: center;
+    padding: 4px 4px 4px 0; min-width: 0;
+  }
+  body.card-style-float2 .grid .card.is-landscape { display: block; }
+  body.card-style-float2 .grid .card.is-landscape .card-photo {
+    width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 10px 10px 0 0;
+  }
+  body.card-style-float2 .grid .card.is-landscape .card-body {
+    padding: 10px 14px 14px;
+  }
+
   /* カードデザイン設定のプレビュー用ボタン */
-  #card-style-default-btn, #card-style-float-btn { min-width: 72px; text-align: center; }
+  #card-style-default-btn, #card-style-float-btn, #card-style-float2-btn { min-width: 72px; text-align: center; }

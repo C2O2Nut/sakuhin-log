@@ -85,6 +85,7 @@
   var editingId = null;
   var currentStar = 0;
   var photoData = null;
+  var photoOrientation = null;
   var memoPhotoData = null;
   // v3変数
   var currentPage = 'list';
@@ -154,10 +155,11 @@
     resolveNext();
   }
 
-  // 画像をJPEG・最大800pxに圧縮してBase64返す
+  // 画像をJPEG・最大800pxに圧縮してBase64返す（向き判定つき）
   function compressImage(dataUrl, callback) {
     var img = new Image();
     img.onload = function() {
+      var orientation = img.width >= img.height ? 'landscape' : 'portrait';
       var max = 800;
       var w = img.width, h = img.height;
       if (w > max) { h = Math.round(h * max / w); w = max; }
@@ -165,7 +167,7 @@
       var canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      callback(canvas.toDataURL('image/jpeg', 0.82));
+      callback(canvas.toDataURL('image/jpeg', 0.82), orientation);
     };
     img.src = dataUrl;
   }
@@ -333,7 +335,7 @@
   // ===== モーダル =====
   function openModal(id) {
     editingId = (id !== undefined && id !== null) ? id : null;
-    currentStar = 0; photoData = null; memoPhotoData = null;
+    currentStar = 0; photoData = null; photoOrientation = null; memoPhotoData = null;
     setStar(0);
 
     el('photo-preview').style.display = 'none'; el('photo-preview').src = '';
@@ -365,6 +367,7 @@
       setStar(item.stars || 0);
       if (item.photo) {
         photoData = item.photo;
+        photoOrientation = item.photoOrientation || null;
         el('photo-preview').src = item.photo; el('photo-preview').style.display = 'block';
         el('photo-placeholder').style.display = 'none';
       }
@@ -411,6 +414,7 @@
       memo: el('f-memo').value.trim(),
       color: el('f-color').value,
       photo: photoData,
+      photoOrientation: photoOrientation,
       memoPhoto: memoPhotoData,
       color: el('f-color').value || null,
       updatedAt: Date.now()
@@ -503,6 +507,24 @@
     return copy;
   }
 
+  // 「フロート2」用: カード要素に画像の向き(縦長/横長)クラスを付与する。
+  // 保存済みのphotoOrientationがあればそれを使い、なければ縦長扱いにしつつ
+  // 実際の画像を読み込んで判明したら横長に補正する（他のカードデザインには影響しない）。
+  function applyPhotoOrientationClass(cardEl, item) {
+    var known = item.photoOrientation;
+    cardEl.classList.add(known === 'landscape' ? 'is-landscape' : 'is-portrait');
+    if (!known && item.photo) {
+      var probe = new Image();
+      probe.onload = function() {
+        if (probe.naturalWidth >= probe.naturalHeight) {
+          cardEl.classList.remove('is-portrait');
+          cardEl.classList.add('is-landscape');
+        }
+      };
+      probe.src = item.photo;
+    }
+  }
+
   function renderGrid() {
     var filtered = getSorted(getFiltered());
     el('header-count').textContent = items.length + ' 件';
@@ -587,6 +609,9 @@
         /* memoPhotoはカードに表示しない */
         + '</div>';
       } // end else
+      if (item.cardType !== 'mood' && item.cardType !== 'folder') {
+        applyPhotoOrientationClass(card, item);
+      }
       card.setAttribute('data-id', String(item.id));
       card.setAttribute('draggable', 'true');
       if (currentFolderId) {
@@ -638,6 +663,9 @@
         + datesHTML
         + (item.memo ? '<div class="card-memo">' + escapeHTML(item.memo) + '</div>' : '')
         + '</div>';
+    }
+    if (item.cardType !== 'mood' && item.cardType !== 'folder') {
+      applyPhotoOrientationClass(card, item);
     }
     card.setAttribute('data-id', String(item.id));
     card.setAttribute('draggable', 'true');
@@ -1399,8 +1427,9 @@
     var file = this.files[0]; if (!file) return;
     var reader = new FileReader();
     reader.onload = function(e) {
-      compressImage(e.target.result, function(compressed) {
+      compressImage(e.target.result, function(compressed, orientation) {
         photoData = compressed;
+        photoOrientation = orientation;
         el('photo-preview').src = compressed; el('photo-preview').style.display = 'block';
         el('photo-placeholder').style.display = 'none';
       });
@@ -2295,7 +2324,7 @@
   function renderSettingsPage() {
     // バージョン表示
     var vl = el('settings-version-label');
-    if (vl) vl.textContent = 'v3.5.1';
+    if (vl) vl.textContent = 'v3.6.0';
 
     // Drive状態を反映
     el('settings-drive-login-btn').style.display = driveLoggedIn ? 'none' : 'block';
@@ -3252,21 +3281,25 @@
 (function () {
   var KEY = 'sakuhin-card-style';
   var body = document.body;
-  var btnDefault = document.getElementById('card-style-default-btn');
-  var btnFloat = document.getElementById('card-style-float-btn');
+  var btns = {
+    'default': document.getElementById('card-style-default-btn'),
+    'float': document.getElementById('card-style-float-btn'),
+    'float2': document.getElementById('card-style-float2-btn')
+  };
   var style = localStorage.getItem(KEY) || 'default';
   function apply() {
     body.classList.toggle('card-style-float', style === 'float');
-    if (btnDefault) btnDefault.classList.toggle('active', style === 'default');
-    if (btnFloat) btnFloat.classList.toggle('active', style === 'float');
+    body.classList.toggle('card-style-float2', style === 'float2');
+    for (var key in btns) { if (btns[key]) btns[key].classList.toggle('active', style === key); }
   }
   apply();
-  if (btnDefault) btnDefault.addEventListener('click', function () {
-    style = 'default'; localStorage.setItem(KEY, style); apply();
-  });
-  if (btnFloat) btnFloat.addEventListener('click', function () {
-    style = 'float'; localStorage.setItem(KEY, style); apply();
-  });
+  for (var key in btns) {
+    (function (key) {
+      if (btns[key]) btns[key].addEventListener('click', function () {
+        style = key; localStorage.setItem(KEY, style); apply();
+      });
+    })(key);
+  }
 })();
 
 // ==================== サイドバー折りたたみ（独立スクリプト） ====================
